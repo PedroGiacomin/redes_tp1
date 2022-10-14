@@ -7,7 +7,7 @@ O trabalho consiste em desenvolver uma aplicação com arquitetura Cliente-Servi
 ## Product Roadmap
 
 - Semana 1 (**12/10 - 15/10**): 
-  + Organização do roadmap
+  + Organização do roadmap :heavy_check_mark:
   + Conexão inicial cliente-servidor
   + Troca de mensagem inicial e teste no Wireshark
 - Semana 2 (**16/10 - 22/10**):
