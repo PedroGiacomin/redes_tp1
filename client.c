@@ -5,6 +5,8 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
+#include "common.h"
+
 #define BUFSZ 1024
 
 void usage(){
