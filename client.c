@@ -8,7 +8,7 @@
 #define BUFSZ 1024
 
 void usage(){
-    printf("./ client <server IP> <port>");
+    printf("./client <server IP> <port>");
     exit(EXIT_FAILURE);
 }
 
@@ -40,7 +40,7 @@ void main(int argc, int **argv){
     }
 
     //--- ESTABELECENDO CONEXAO COM SERVIDOR --//
-    //Salva o endereco na variavel addr, que eh do tipo correto (addr_storage nao eh suportado)
+    //Salva o endereco de storage em addr, que eh do tipo correto (addr_storage nao eh suportado)
     //Usa a funcao connect passando o
     //      - socket local (s) 
     //      - porta e IP do servidor de destino (addr)
@@ -66,13 +66,13 @@ void main(int argc, int **argv){
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);
 
-    // --- CRIACAO DA MENSAGEM --- // 
+    // --- CRIACAO DA MENSAGEM (request) --- // 
     //Pega conteudo do teclado e salva no buffer 
     //(num primeiro momento a mensagem eh so esse conteudo)
     printf("mensagem> ");
     fgets(buf, BUFSZ - 1, stdin);
 
-    // --- ENVIO DA MENSAGEM --- // 
+    // --- ENVIO DA MENSAGEM (request) --- // 
     //Envia a mensagem pro socket, retorna o numero de bytes enviado
     int count = send(s, buf, strlen(buf) + 1, 0);
     if(count != strlen(buf) + 1){
@@ -81,7 +81,7 @@ void main(int argc, int **argv){
     //reseta o buffer
     memset(buf, 0, BUFSZ);
 
-    // --- RECEBIMENTO DA MENSAGEM DO SERVER --- //
+    // --- RECEBIMENTO DA MENSAGEM DO SERVER (response) --- //
     //Aguarda chegar mensagem do servidor no socket e salva no buffer
     unsigned total = 0;
     while(1){

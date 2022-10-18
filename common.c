@@ -4,21 +4,25 @@
 
 #include <arpa/inet.h>
 
-
+// --- TRATAMENTO DE ERROS --- //
 void logexit(const char *msg){
     perror(msg);
     exit(EXIT_FAILURE);
 }
 
-//Funcao para passar os enderecos recebidos na chamada da funcao
+// --- DEFINICAO DE ENDERECO (IP + PORT) --- //
+//Funcao para passar os enderecos recebidos na chamada do programa
 //para a estrutura do POSIX que guarda os enderecos (sockaddr_storage)
-int addrparse(const char *ip_addr, const char *port_addr, struct sockaddr_storage *storage){
-    if(ip_addr == NULL || port_addr == NULL){
+
+//se tiver erro retorna -1, se nao retorna 0
+int addrparse(const char *ip_recebido, const char *port_recebido, struct sockaddr_storage *storage){
+    if(ip_recebido == NULL || port_recebido == NULL){
         //Sinal pra se der algum erro
         return -1;
     }
 
-    uint16_t port = (uint16_t)atoi(port_addr); //salva a porta como inteiro
+    //salva a porta como inteiro
+    uint16_t port = (uint16_t)atoi(port_recebido); 
     if(port == 0){
         return -1;
     }
@@ -26,7 +30,7 @@ int addrparse(const char *ip_addr, const char *port_addr, struct sockaddr_storag
 
     //Se for passado um IPv4 (AF_INET)
     struct in_addr inaddr4;     //IPv4
-    if(inet_pton(AF_INET, ip_addr, &inaddr4)) {
+    if(inet_pton(AF_INET, ip_recebido, &inaddr4)) {
         // Salva IPv4 e port no storage
         struct sockaddr_in *addr4 = (struct sockaddr_in *)storage;
         addr4->sin_family = AF_INET;
@@ -37,7 +41,7 @@ int addrparse(const char *ip_addr, const char *port_addr, struct sockaddr_storag
 
     //Se for passado um IPv6 (AF_INET6)
     struct in_addr inaddr6;     //IPv6
-    if(inet_pton(AF_INET6, ip_addr, &inaddr6)) {
+    if(inet_pton(AF_INET6, ip_recebido, &inaddr6)) {
         // Salva IPv6 e port no storage
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)storage;
         addr6->sin6_family = AF_INET;
@@ -62,7 +66,7 @@ void addrtostr(const struct sockaddr *addr, char *str, size_t strsize) {
         //inet_ntop eh o que transforma o endereco em formato sockaddr pra string
         if (!inet_ntop(AF_INET, &(addr4->sin_addr), addrstr,
                        INET6_ADDRSTRLEN + 1)) {
-            logexit("conversao ntop");
+            logexit("erro na conversao ntop");
         }
         port = ntohs(addr4->sin_port); // network to host short, transforma a endianidade da rede para do sistema
     } else if (addr->sa_family == AF_INET6) {
@@ -70,14 +74,46 @@ void addrtostr(const struct sockaddr *addr, char *str, size_t strsize) {
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)addr;
         if (!inet_ntop(AF_INET6, &(addr6->sin6_addr), addrstr,
                        INET6_ADDRSTRLEN + 1)) {
-            logexit("conversao ntop");
+            logexit("erro na conversao ntop");
         }
         port = ntohs(addr6->sin6_port); // network to host short
     } else {
-        logexit("unknown protocol family.");
+        logexit("familia de IP desconhecida");
     }
     //Soh imprime no terminal o endereco (ja em formato de string)
     if (str) {
         snprintf(str, strsize, "IPv%d %s %hu", version, addrstr, port);
+    }
+}
+
+//Funcao para passar os enderecos recebidos na chamada do programa (fam_ip + port)
+//para a estrutura do POSIX que guarda os enderecos (sockaddr_storage)
+int server_sockaddr_init(const char *ip_family_recebido, const char *port_recebido,
+                         struct sockaddr_storage *storage) {
+    
+    // Salva a porta do processo como int
+    uint16_t port = (uint16_t)atoi(port_recebido);
+    if (port == 0) {
+        return -1;
+    }
+    port = htons(port); // host to network short (endianidade)
+
+    memset(storage, 0, sizeof(*storage));
+
+    //Trata diferente se eh v4 ou v6
+    if (0 == strcmp(ip_family_recebido, "v4")) {
+        struct sockaddr_in *addr4 = (struct sockaddr_in *)storage;
+        addr4->sin_family = AF_INET;
+        addr4->sin_addr.s_addr = INADDR_ANY; //significa que o endereco de IP pode ser qualquer um
+        addr4->sin_port = port;
+        return 0;
+    } else if (0 == strcmp(ip_family_recebido, "v6")) {
+        struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)storage;
+        addr6->sin6_family = AF_INET6;
+        addr6->sin6_addr = in6addr_any;
+        addr6->sin6_port = port;
+        return 0;
+    } else {
+        return -1;
     }
 }
