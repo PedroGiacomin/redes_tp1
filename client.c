@@ -1,22 +1,28 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "common.h"
 
 #define BUFSZ 1024
 
+//Pra testes
+//Terminal 1: ./server v4 5151
+//Terminal 2: ./client 127.0.0.1 5151
+
 void usage(){
-    printf("./client <server IP> <port>");
+    printf("Chamada correta: ./client <server IP> <port>\n");
     exit(EXIT_FAILURE);
 }
 
 //argv[1] -> IP do servidor
 //argv[2] -> porta do processo
-void main(int argc, int **argv){
+int main(int argc, char **argv){
     // Garantia de que o programa foi inicializado corretamente
     if(argc < 3){
         usage();
@@ -55,7 +61,7 @@ void main(int argc, int **argv){
     char addrstr[BUFSZ];
 	addrtostr(addr, addrstr, BUFSZ);
 
-    printf("connected to %s\n", addrstr);
+    printf("conectado a %s\n", addrstr);
 
     // ------------- TROCA DE MENSAGENS ------------- //
     //CLIENT 1.0 - funcionamento: 

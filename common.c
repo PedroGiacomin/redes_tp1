@@ -11,7 +11,6 @@ void logexit(const char *msg){
     exit(EXIT_FAILURE);
 }
 
-// --- DEFINICAO DE ENDERECO (IP + PORT) --- //
 //Funcao para passar os enderecos recebidos na chamada do programa
 //para a estrutura do POSIX que guarda os enderecos (sockaddr_storage)
 
@@ -45,9 +44,9 @@ int addrparse(const char *ip_recebido, const char *port_recebido, struct sockadd
     if(inet_pton(AF_INET6, ip_recebido, &inaddr6)) {
         // Salva IPv6 e port no storage
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)storage;
-        addr6->sin6_family = AF_INET;
+        addr6->sin6_family = AF_INET6;
         addr6->sin6_port = port;
-        memcpy(&(addr6->sin6_addr), inaddr6, sizeof(inaddr6));
+        memcpy(&(addr6->sin6_addr), &inaddr6, sizeof(inaddr6));
         return 0;
     }
 

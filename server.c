@@ -3,20 +3,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
 
+
 #define BUFSZ 1024
 
 void usage(){
-    printf("./server <v4/v6> <port>");
+    printf("Chamada correta: ./server <v4/v6> <port>\n");
     exit(EXIT_FAILURE);
 }
 
 //argv[1] -> familia IP
 //argv[2] -> porta do processo
-void main(int argc, int **argv){
+int main(int argc, char **argv){
     // Garantia de que o programa foi inicializado corretamente
     if(argc < 3){
         usage();
@@ -37,6 +39,12 @@ void main(int argc, int **argv){
         logexit("erro ao inicializar socket");
     }
 
+    //Essa eh apenas uma opcao pra reutilizar a mesma porta em duas execucoes consecutivas sem ter que esperar
+    int enable = 1;
+    if (0 != setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int))) {
+        logexit("setsockopt");
+    }
+
     // Salva o endereco de storage em addr, que eh do tipo correto (addr_storage nao eh suportado)
     struct sockaddr *addr = (struct sockaddr *)(&storage);
     
@@ -54,7 +62,7 @@ void main(int argc, int **argv){
     }
     char addrstr[BUFSZ];
     addrtostr(addr, addrstr, BUFSZ);
-    printf("ouvindo na porta %s, esperando conexao\n", addrstr);
+    printf("ouvindo na porta %s\n", addrstr);
 
     // Aceita e trata conexoes eternamente
     while (1) {
@@ -93,7 +101,7 @@ void main(int argc, int **argv){
         // --- CRIACAO DA MENSAGEM (response) --- //
         //Salva o proprio endereco do cliente no buffer
         //(num primeiro momento a mensagem eh so esse endereco)
-        sprintf(buf, "Oi cliente <%.1000s>, recebi sua mensagem\n", caddrstr);
+        sprintf(buf, "Oi cliente <%.900s>, recebi sua mensagem\n", caddrstr);
 
         // --- ENVIO DA MENSAGEM (response) --- //
         count = send(client_sock, buf, strlen(buf) + 1, 0);
