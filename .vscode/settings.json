@@ -2,6 +2,7 @@
     "files.associations": {
         "inet.h": "c",
         "stdio.h": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "string.h": "c"
     }
 }
