@@ -26,4 +26,4 @@ struct mensagem{
 
 void build_msg(struct mensagem *msg_out, int loc, int dev);
 
-void msg2string(char *str_out, struct mensagem msg_in);
+void msg2string(char *str_out, struct mensagem *msg_in);

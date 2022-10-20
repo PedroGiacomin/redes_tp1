@@ -10,6 +10,7 @@
 #include "common.h"
 
 #define BUFSZ 1024
+#define MSGSZ 1024
 
 //Pra testes
 //Terminal 1: ./server v4 5151
@@ -84,16 +85,22 @@ int main(int argc, char **argv){
     //Envia a mensagem pro socket, retorna o numero de bytes enviado
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
 
-    //Envuando msg em formato de [mensagem]
-    struct mensagem *msg_teste = malloc(1024);
-    build_msg(msg_teste, 1, 1); //constroi mensagem simples
+    //Enviando msg em formato de [mensagem]
 
+    //Constroi mensagem, aloca 4B
+    struct mensagem *msg_teste = malloc(MSGSZ); 
+    build_msg(msg_teste, 1, 1); 
+
+    //Envia msg
     int count = send(s, msg_teste, sizeof(msg_teste) + 1, 0);
     if(count != sizeof(msg_teste) + 1){
         logexit("erro ao enviar mensagem pro socket");
     }
 
-    //Enviando msg em formato e string
+    //Desaloca espaco
+    free(msg_teste);
+
+    //Enviando msg em formato de string
     // int count = send(s, buf, strlen(buf) + 1, 0);
     // if(count != strlen(buf) + 1){
     //     logexit("erro ao enviar mensagem pro socket");

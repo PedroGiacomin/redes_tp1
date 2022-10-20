@@ -10,6 +10,7 @@
 
 
 #define BUFSZ 1024
+#define MSGSZ 1024
 
 void usage(){
     printf("Chamada correta: ./server <v4/v6> <port>\n");
@@ -94,9 +95,15 @@ int main(int argc, char **argv){
         memset(buf, 0, BUFSZ);
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
-        // Recebe mensagem por client_sock e salva no buffer (e printa no terminal o que foi recebido)
-        size_t count = recv(client_sock, buf, BUFSZ - 1, 0);
-        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, buf);
+
+        //Recebe msg em formato de [mensagem] e salva no msg_buf
+        struct mensagem *msg_buf = malloc(MSGSZ);
+        size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
+
+        //Imprime a mensagem em formato de string no terminal
+        char *str_out = malloc(MSGSZ);
+        msg2string(str_out, msg_buf);
+        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, str_out);
 
         // --- CRIACAO DA MENSAGEM (response) --- //
         //Salva o proprio endereco do cliente no buffer
