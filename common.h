@@ -24,6 +24,6 @@ struct mensagem{
     //int dev_state[10];
 };
 
-struct mensagem build_msg(int loc, int dev);
+void build_msg(struct mensagem *msg_out, int loc, int dev);
 
 void msg2string(char *str_out, struct mensagem msg_in);

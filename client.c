@@ -85,20 +85,21 @@ int main(int argc, char **argv){
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
 
     //Envuando msg em formato de [mensagem]
-    struct mensagem msg = build_msg(1,1);
+    struct mensagem *msg_teste = malloc(1024);
+    build_msg(msg_teste, 1, 1); //constroi mensagem simples
 
-    // int count = send(s, msg, sizeof(msg) + 1, 0);
-    // if(count != sizeof(msg)){
-    //     logexit("erro ao enviar mensagem pro socket");
-    // }
-
-    //Enviando msg em formato e string
-    int count = send(s, buf, strlen(buf) + 1, 0);
-    if(count != strlen(buf) + 1){
+    int count = send(s, msg_teste, sizeof(msg_teste) + 1, 0);
+    if(count != sizeof(msg_teste) + 1){
         logexit("erro ao enviar mensagem pro socket");
     }
+
+    //Enviando msg em formato e string
+    // int count = send(s, buf, strlen(buf) + 1, 0);
+    // if(count != strlen(buf) + 1){
+    //     logexit("erro ao enviar mensagem pro socket");
+    // }
     //reseta o buffer
-    memset(buf, 0, BUFSZ);
+    //memset(buf, 0, BUFSZ);
 
     // --- RECEBIMENTO DA MENSAGEM DO SERVER (response) --- //
     //Aguarda chegar mensagem do servidor no socket e salva no buffer

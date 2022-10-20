@@ -21,14 +21,11 @@ struct mensagem{
 };
 
 //Funcao pra inicializar mensagem
-struct mensagem build_msg(int loc, int dev){
-    struct mensagem msg_out;
-    msg_out.dev_id = dev;
-    msg_out.local_id = loc;
+void build_msg(struct mensagem *msg_out, int loc, int dev){
+    msg_out->dev_id = dev;
+    msg_out->local_id = loc;
 
     printf("Msg built\n");
-
-    return msg_out;
 }
 
 // Transforma uma [mensagem] em uma [string] no formato <loc_id> <dev_id> 
