@@ -26,11 +26,11 @@ struct mensagem build_msg(int loc, int dev){
 }
 
 // Transforma uma [mensagem] em uma [string]
-char *msg2string(struct mensagem msg_in){
+void msg2string(char *str_out, struct mensagem msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
-    //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
-    char *str_out = malloc(1024);
+    //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
+    //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
     char *dev_id_aux = malloc(sizeof(msg_in.dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in.dev_id));
 
@@ -42,18 +42,18 @@ char *msg2string(struct mensagem msg_in){
     strcat(str_out, dev_id_aux);
     strcat(str_out, loc_id_aux);
 
-    //COMO DESALOCAR STR_OUT???
     free(dev_id_aux);
     free(loc_id_aux);
-
-    return  str_out;
 }
 
 int main(){
     // --- TESTES --- // 
     printf("Teste do msg2string\n");
     struct mensagem msg_teste = build_msg(1,1);
-    char *str_out = msg2string(msg_teste);
+    
+    //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
+    char *str_out = malloc(1024);
+    msg2string(str_out, msg_teste);
     puts(str_out);
 
     return 0;
