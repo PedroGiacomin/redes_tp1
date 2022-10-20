@@ -5,3 +5,6 @@ all:
 
 clean:
 	rm common.o client server 
+
+test:
+	gcc -Wall -c teste.c

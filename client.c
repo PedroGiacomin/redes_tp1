@@ -20,6 +20,14 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
+//Estrutura que guarda uma mensagem para o servidor
+struct mensagem{
+    //char *tipo;
+    int local_id; 
+    int dev_id;
+    //int dev_state[10];
+};
+
 //argv[1] -> IP do servidor
 //argv[2] -> porta do processo
 int main(int argc, char **argv){
@@ -65,7 +73,8 @@ int main(int argc, char **argv){
 
     // ------------- TROCA DE MENSAGENS ------------- //
     //CLIENT 1.0 - funcionamento: 
-    // - pega uma string do teclado e envia para o servidor
+    // - pega uma string do teclado com conteudo da msg
+    // - Envia mensagem em formato de string pro servidor
     // - depois espera uma resposta do servidor e imprime na tela
     // - encerra o programa
     
@@ -74,14 +83,15 @@ int main(int argc, char **argv){
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);
 
-    // --- CRIACAO DA MENSAGEM (request) --- // 
-    //Pega conteudo do teclado e salva no buffer 
-    //(num primeiro momento a mensagem eh so esse conteudo)
+    // // --- CRIACAO DA MENSAGEM (request) --- // 
+    // //DEve pegar a string recebida na interface e transformar numa string válida de mensagem
     printf("mensagem> ");
     fgets(buf, BUFSZ - 1, stdin);
 
     // --- ENVIO DA MENSAGEM (request) --- // 
     //Envia a mensagem pro socket, retorna o numero de bytes enviado
+    //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
+
     int count = send(s, buf, strlen(buf) + 1, 0);
     if(count != strlen(buf) + 1){
         logexit("erro ao enviar mensagem pro socket");
@@ -107,7 +117,7 @@ int main(int argc, char **argv){
     close(s);
 
     // Imprime a mensagem na tela
-    printf("%u received bytes", total);
+    printf("%u received bytes\n", total);
     puts(buf);
 
     //Termina o programa

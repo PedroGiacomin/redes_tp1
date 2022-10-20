@@ -3,6 +3,7 @@
         "inet.h": "c",
         "stdio.h": "c",
         "common.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdlib.h": "c"
     }
 }
