@@ -16,13 +16,6 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
-//Estrutura que guarda uma mensagem para o servidor
-struct mensagem{
-    //char *tipo;
-    int local_id, dev_id;
-    //int dev_state[10];
-};
-
 //argv[1] -> familia IP
 //argv[2] -> porta do processo
 int main(int argc, char **argv){

@@ -20,14 +20,6 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
-//Estrutura que guarda uma mensagem para o servidor
-struct mensagem{
-    //char *tipo;
-    int local_id; 
-    int dev_id;
-    //int dev_state[10];
-};
-
 //argv[1] -> IP do servidor
 //argv[2] -> porta do processo
 int main(int argc, char **argv){
@@ -84,14 +76,23 @@ int main(int argc, char **argv){
     memset(buf, 0, BUFSZ);
 
     // // --- CRIACAO DA MENSAGEM (request) --- // 
-    // //DEve pegar a string recebida na interface e transformar numa string válida de mensagem
-    printf("mensagem> ");
-    fgets(buf, BUFSZ - 1, stdin);
+    // //Deve pegar a string recebida na interface e transformar numa string válida de mensagem
+    // printf("mensagem> ");
+    // fgets(buf, BUFSZ - 1, stdin);
 
     // --- ENVIO DA MENSAGEM (request) --- // 
     //Envia a mensagem pro socket, retorna o numero de bytes enviado
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
 
+    //Envuando msg em formato de [mensagem]
+    struct mensagem msg = build_msg(1,1);
+
+    // int count = send(s, msg, sizeof(msg) + 1, 0);
+    // if(count != sizeof(msg)){
+    //     logexit("erro ao enviar mensagem pro socket");
+    // }
+
+    //Enviando msg em formato e string
     int count = send(s, buf, strlen(buf) + 1, 0);
     if(count != strlen(buf) + 1){
         logexit("erro ao enviar mensagem pro socket");

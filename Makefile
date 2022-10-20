@@ -4,7 +4,7 @@ all:
 	gcc -Wall server.c common.o -o server
 
 clean:
-	rm common.o client server 
+	rm *.o client server teste
 
 test:
 	gcc -Wall -c teste.c
