@@ -28,34 +28,38 @@ void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *s
     printf("Msg built\n");
 }
 
-
-// Transforma uma [mensagem] em uma [string] no formato <loc_id> <dev_id> 
+// Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
 void msg2string(char *str_out, struct request_msg *msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
     //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
     
+    //rever o tamanho desses maloc aq
     char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
-    char *value1_aux = malloc(sizeof(msg_in->dev_id));
-    char *value2_aux = malloc(sizeof(msg_in->dev_id));
+    char *values_aux = malloc(sizeof(msg_in->dev_id));
     
     sprintf(dev_id_aux, " %d", msg_in->dev_id);
     sprintf(loc_id_aux, " %d", msg_in->local_id);
-    sprintf(value1_aux, " %d", msg_in->dev_state[0]);
-    sprintf(value2_aux, " %d", msg_in->dev_state[1]);
+
+    //Transforma vetor em string, sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
+        char *aux = malloc(3);
+        sprintf(aux, "% d", msg_in->dev_state[i]);
+        strcat(values_aux, aux); 
+        free(aux);
+    }
 
     strcat(str_out, "request_msg> ");
     strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
-    strcat(str_out, value1_aux);
-    strcat(str_out, value2_aux);
+    strcat(str_out, loc_id_aux);
+    strcat(str_out, values_aux);
 
     free(dev_id_aux);
     free(loc_id_aux);
-    free(value1_aux);
-    free(value2_aux);
+    free(values_aux);
 }
 
 int main(){
@@ -65,10 +69,12 @@ int main(){
     //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
     struct request_msg *msg_teste = malloc(MSGSZ);
     char *tipo = "INS_REQ"; 
-    int vec[MAX_STATE_VALUES] = {1, 2};
+    int *vec;
+    int vec_aux[2] = {2, 3};
+    vec = vec_aux;
     char *str_out = malloc(MSGSZ);
 
-    build_msg(msg_teste, tipo, 1, 1, vec);
+    build_msg(msg_teste, tipo, 13, 90, vec);
 
     msg2string(str_out, msg_teste);
 
