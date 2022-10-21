@@ -29,13 +29,13 @@ void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *s
 }
 
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
+// Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
 void msg2string(char *str_out, struct request_msg *msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
     //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
     
-    //rever o tamanho desses maloc aq
     char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
     char *values_aux = malloc(sizeof(msg_in->dev_id));
@@ -43,7 +43,7 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     sprintf(dev_id_aux, " %d", msg_in->dev_id);
     sprintf(loc_id_aux, " %d", msg_in->local_id);
 
-    //Transforma vetor em string, sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
     for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
         char *aux = malloc(3);
         sprintf(aux, "% d", msg_in->dev_state[i]);

@@ -34,38 +34,39 @@ void build_request_msg(struct request_msg *msg_out, char *tipo, int loc, int dev
     printf("[log] Msg built\n");
 }
 
-
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
+// Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
 void msg2string(char *str_out, struct request_msg *msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
     //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
+    
     char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
-    char *value1_aux = malloc(sizeof(msg_in->dev_id));
-    char *value2_aux = malloc(sizeof(msg_in->dev_id));
+    char *values_aux = malloc(sizeof(msg_in->dev_id));
     
     sprintf(dev_id_aux, " %d", msg_in->dev_id);
     sprintf(loc_id_aux, " %d", msg_in->local_id);
-    sprintf(value1_aux, " %d", msg_in->dev_state[0]);
-    printf("deu certo ate no sprintf2\n");
-    sprintf(value2_aux, " %d", msg_in->dev_state[1]);
 
-    printf("deu certo ate no  strcat\n");
+    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
+        char *aux = malloc(3);
+        sprintf(aux, "% d", msg_in->dev_state[i]);
+        strcat(values_aux, aux); 
+        free(aux);
+    }
+
     strcat(str_out, "request_msg> ");
     strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
-    strcat(str_out, value1_aux);
-    strcat(str_out, value2_aux);
+    strcat(str_out, loc_id_aux);
+    strcat(str_out, values_aux);
 
-    printf("deu certo ate no free\n");
     free(dev_id_aux);
     free(loc_id_aux);
-    free(value1_aux);
-    free(value2_aux);
+    free(values_aux);
 }
-
 
 // --- DEFINICAO DE ENDERECOS --- // 
 

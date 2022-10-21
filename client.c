@@ -78,8 +78,17 @@ int main(int argc, char **argv){
     // --- CRIACAO DA MENSAGEM (request) --- // 
     struct request_msg *msg = malloc(MSGSZ); //guarda a msg
     char *tipo = "INS_REQ"; //guarda o tipo
-    int valores[2] = {1, 2}; //guarda os valores
-    build_request_msg(msg, tipo, 1, 1, valores); //constroi a msg
+    int valores[2] = {13, 7}; //guarda os valores
+    build_request_msg(msg, tipo, 9, 22, valores); //constroi a msg
+
+    char msg_buf[BUFSZ];
+    memset(msg_buf, 0, BUFSZ);
+    msg2string(msg_buf, msg); //transforma pra string
+
+	size_t count = send(s, msg_buf, strlen(msg_buf)+1, 0); //envia como string
+	if (count != strlen(msg_buf)+1) {
+		logexit("send");
+	}
 
     //[ERRO] - To enviando ponteiros pro meu servidor, com o tipo e os valores da msg, isso nao da certo porque os poteiros tao
     //no lado da memoria do lado do cliente, e quando passa pro lado do servidor da ruim. Tava dando certo quando era soh tipos inteiros 
@@ -87,10 +96,6 @@ int main(int argc, char **argv){
     // --- ENVIO DA MENSAGEM (request) --- // 
     //Envia a mensagem pro socket em formato de [request_msg], retorna o numero de bytes enviado
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
-    int count = send(s, msg, sizeof(msg) + 1, 0);
-    if(count != sizeof(msg) + 1){
-        logexit("erro ao enviar mensagem pro socket");
-    }
 
     // --- DEESTRUICAO DA MENSAGEM ---//
     free(msg); //desaloca o espaco da msg
