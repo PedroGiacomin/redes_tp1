@@ -95,16 +95,19 @@ int main(int argc, char **argv){
         memset(buf, 0, BUFSZ);
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
-
-        //Recebe msg em formato de [mensagem] e salva no msg_buf
-        struct mensagem *msg_buf = malloc(MSGSZ);
+        //Recebe msg em formato de [request_msg] e salva no msg_buf
+        struct request_msg *msg_buf = malloc(MSGSZ);
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
-        
+        printf("recebeu\n");
 
         //Imprime a mensagem em formato de string no terminal
         char *str_out = malloc(MSGSZ);
         msg2string(str_out, msg_buf);
         printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, str_out);
+
+        //Desaloca espaco da string e mensagem
+        free(str_out);
+        free(msg_buf);
 
         // --- CRIACAO DA MENSAGEM (response) --- //
         //Salva o proprio endereco do cliente no buffer

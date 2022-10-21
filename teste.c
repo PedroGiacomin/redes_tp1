@@ -41,12 +41,12 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     char *value1_aux = malloc(sizeof(msg_in->dev_id));
     char *value2_aux = malloc(sizeof(msg_in->dev_id));
     
-    sprintf(dev_id_aux, "<dev_id = %d>", msg_in->dev_id);
-    sprintf(loc_id_aux, "<loc_id = %d>", msg_in->local_id);
-    sprintf(value1_aux, "<value1 = %d>", msg_in->dev_state[0]);
-    sprintf(value2_aux, "<value2 = %d>", msg_in->dev_state[1]);
+    sprintf(dev_id_aux, " %d", msg_in->dev_id);
+    sprintf(loc_id_aux, " %d", msg_in->local_id);
+    sprintf(value1_aux, " %d", msg_in->dev_state[0]);
+    sprintf(value2_aux, " %d", msg_in->dev_state[1]);
 
-    strcat(str_out, "mensagem> ");
+    strcat(str_out, "request_msg> ");
     strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
     strcat(str_out, value1_aux);
@@ -56,11 +56,6 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     free(loc_id_aux);
     free(value1_aux);
     free(value2_aux);
-}
-void unbuild_msg(struct request_msg *msg){
-    free(msg);
-
-    printf("espaco da msg liberado\n");
 }
 
 int main(){

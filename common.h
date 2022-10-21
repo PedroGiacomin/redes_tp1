@@ -23,9 +23,9 @@ struct request_msg{
     char *type;
     int local_id; 
     int dev_id;
-    int dev_state[MAX_VALUES]; //São poucos valores na mensagem de request, no max 5
+    int *dev_state; //vetor para guardar os valores
 };
 
-void build_msg(struct request_msg *msg_out, int loc, int dev);
+void build_request_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec);
 
 void msg2string(char *str_out, struct request_msg *msg_in);

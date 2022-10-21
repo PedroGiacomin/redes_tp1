@@ -65,9 +65,8 @@ int main(int argc, char **argv){
     printf("conectado a %s\n", addrstr);
 
     // ------------- TROCA DE MENSAGENS ------------- //
-    //CLIENT 1.0 - funcionamento: 
-    // - pega uma string do teclado com conteudo da msg
-    // - Envia mensagem em formato de string pro servidor
+    //CLIENT 2.0 - funcionamento: 
+    // - passa uma mensagem definida aqui no codigo para o servidor como a struct [request_msg]
     // - depois espera uma resposta do servidor e imprime na tela
     // - encerra o programa
     
@@ -76,29 +75,22 @@ int main(int argc, char **argv){
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);
 
-    // // --- CRIACAO DA MENSAGEM (request) --- // 
-    // //Deve pegar a string recebida na interface e transformar numa string válida de mensagem
-    // printf("mensagem> ");
-    // fgets(buf, BUFSZ - 1, stdin);
+    // --- CRIACAO DA MENSAGEM (request) --- // 
+    struct request_msg *msg = malloc(MSGSZ); //guarda a msg
+    char *tipo = "INS_REQ"; //guarda o tipo
+    int valores[2] = {1, 2}; //guarda os valores
+    build_request_msg(msg, tipo, 1, 1, valores); //constroi a msg
 
     // --- ENVIO DA MENSAGEM (request) --- // 
-    //Envia a mensagem pro socket, retorna o numero de bytes enviado
+    //Envia a mensagem pro socket em formato de [request_msg], retorna o numero de bytes enviado
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
-
-    //Enviando msg em formato de [mensagem]
-
-    //Constroi mensagem, aloca 4B
-    struct request_msg *msg = malloc(MSGSZ); 
-    build_msg(msg, 1, 1); 
-
-    //Envia msg
     int count = send(s, msg, sizeof(msg) + 1, 0);
     if(count != sizeof(msg) + 1){
         logexit("erro ao enviar mensagem pro socket");
     }
 
-    //Desaloca espaco
-    free(msg);
+    // --- DEESTRUICAO DA MENSAGEM ---//
+    free(msg); //desaloca o espaco da msg
 
     // --- RECEBIMENTO DA MENSAGEM DO SERVER (response) --- //
     //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
