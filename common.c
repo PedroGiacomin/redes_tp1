@@ -12,16 +12,18 @@ void logexit(const char *msg){
 }
 
 // --- TRATAMENTO DE MENSAGENS --- // 
-//Estrutura que guarda uma mensagem para o servidor
-struct mensagem{
-    //char *tipo;
+//Estrutura que guarda uma mensagem de request para o servidor
+struct request_msg{
+    char *type;
     int local_id; 
     int dev_id;
-    //int dev_state[10];
+    int dev_state[10];
 };
 
 //Funcao pra inicializar mensagem
-void build_msg(struct mensagem *msg_out, int loc, int dev){
+void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec){
+    
+    strcpy(msg_out->type, tipo);
     msg_out->dev_id = dev;
     msg_out->local_id = loc;
 
@@ -29,7 +31,7 @@ void build_msg(struct mensagem *msg_out, int loc, int dev){
 }
 
 // Transforma uma [mensagem] em uma [string] no formato <loc_id> <dev_id> 
-void msg2string(char *str_out, struct mensagem *msg_in){
+void msg2string(char *str_out, struct request_msg *msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 

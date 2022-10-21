@@ -7,58 +7,80 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#define MSGSZ 1024
+#define MAX_STATE_VALUES 2
+
 //Estrutura que guarda uma mensagem para o servidor
-struct mensagem{
-    //char *tipo;
+struct request_msg{
+    char *type;
     int local_id; 
     int dev_id;
-    //int dev_state[10];
+    int *dev_state;
 };
 
 //Funcao pra inicializar mensagem
-void build_msg(struct mensagem *msg_out, int loc, int dev){
+void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec){
+    msg_out->type = tipo;
     msg_out->dev_id = dev;
     msg_out->local_id = loc;
+    msg_out->dev_state = state_vec;
 
     printf("Msg built\n");
 }
 
+
 // Transforma uma [mensagem] em uma [string] no formato <loc_id> <dev_id> 
-void msg2string(char *str_out, struct mensagem *msg_in){
+void msg2string(char *str_out, struct request_msg *msg_in){
 
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
-    //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada (O MESMO OCORREU PRA MENSAGENS)
+    //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
+    
     char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
-
+    char *value1_aux = malloc(sizeof(msg_in->dev_id));
+    char *value2_aux = malloc(sizeof(msg_in->dev_id));
     
     sprintf(dev_id_aux, "<dev_id = %d>", msg_in->dev_id);
     sprintf(loc_id_aux, "<loc_id = %d>", msg_in->local_id);
+    sprintf(value1_aux, "<value1 = %d>", msg_in->dev_state[0]);
+    sprintf(value2_aux, "<value2 = %d>", msg_in->dev_state[1]);
 
     strcat(str_out, "mensagem> ");
+    strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
-    strcat(str_out, loc_id_aux);
+    strcat(str_out, value1_aux);
+    strcat(str_out, value2_aux);
 
     free(dev_id_aux);
     free(loc_id_aux);
+    free(value1_aux);
+    free(value2_aux);
+}
+void unbuild_msg(struct request_msg *msg){
+    free(msg);
+
+    printf("espaco da msg liberado\n");
 }
 
 int main(){
     // --- TESTES --- // 
-    printf("Teste do msg2string\n");
+    printf("Teste do build_msg\n");
 
     //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
-    struct mensagem *msg_teste = malloc(1024);
-    build_msg(msg_teste, 1, 1);
-    
-    //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
-    char *str_out = malloc(1024);
+    struct request_msg *msg_teste = malloc(MSGSZ);
+    char *tipo = "INS_REQ"; 
+    int vec[MAX_STATE_VALUES] = {1, 2};
+    char *str_out = malloc(MSGSZ);
+
+    build_msg(msg_teste, tipo, 1, 1, vec);
+
     msg2string(str_out, msg_teste);
-    puts(str_out);
 
-    free(str_out);
+    puts(str_out);
+    
     free(msg_teste);
+    free(str_out);
 
     return 0;
 }

@@ -99,6 +99,7 @@ int main(int argc, char **argv){
         //Recebe msg em formato de [mensagem] e salva no msg_buf
         struct mensagem *msg_buf = malloc(MSGSZ);
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
+        
 
         //Imprime a mensagem em formato de string no terminal
         char *str_out = malloc(MSGSZ);

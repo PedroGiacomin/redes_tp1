@@ -88,28 +88,20 @@ int main(int argc, char **argv){
     //Enviando msg em formato de [mensagem]
 
     //Constroi mensagem, aloca 4B
-    struct mensagem *msg_teste = malloc(MSGSZ); 
-    build_msg(msg_teste, 1, 1); 
+    struct request_msg *msg = malloc(MSGSZ); 
+    build_msg(msg, 1, 1); 
 
     //Envia msg
-    int count = send(s, msg_teste, sizeof(msg_teste) + 1, 0);
-    if(count != sizeof(msg_teste) + 1){
+    int count = send(s, msg, sizeof(msg) + 1, 0);
+    if(count != sizeof(msg) + 1){
         logexit("erro ao enviar mensagem pro socket");
     }
 
     //Desaloca espaco
-    free(msg_teste);
-
-    //Enviando msg em formato de string
-    // int count = send(s, buf, strlen(buf) + 1, 0);
-    // if(count != strlen(buf) + 1){
-    //     logexit("erro ao enviar mensagem pro socket");
-    // }
-    //reseta o buffer
-    //memset(buf, 0, BUFSZ);
+    free(msg);
 
     // --- RECEBIMENTO DA MENSAGEM DO SERVER (response) --- //
-    //Aguarda chegar mensagem do servidor no socket e salva no buffer
+    //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
     unsigned total = 0;
     while(1){
         //O recv salva o que é recebido byte a byte o e retorna o numero de bytes recebido
