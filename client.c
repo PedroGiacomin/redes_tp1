@@ -81,6 +81,9 @@ int main(int argc, char **argv){
     int valores[2] = {1, 2}; //guarda os valores
     build_request_msg(msg, tipo, 1, 1, valores); //constroi a msg
 
+    //[ERRO] - To enviando ponteiros pro meu servidor, com o tipo e os valores da msg, isso nao da certo porque os poteiros tao
+    //no lado da memoria do lado do cliente, e quando passa pro lado do servidor da ruim. Tava dando certo quando era soh tipos inteiros 
+    //a solucao vai ser transformar a request_msg em string pra transmitir pro servidor
     // --- ENVIO DA MENSAGEM (request) --- // 
     //Envia a mensagem pro socket em formato de [request_msg], retorna o numero de bytes enviado
     //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido

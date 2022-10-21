@@ -41,7 +41,6 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
     //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
     //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
-    
     char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
     char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
     char *value1_aux = malloc(sizeof(msg_in->dev_id));
@@ -50,13 +49,17 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     sprintf(dev_id_aux, " %d", msg_in->dev_id);
     sprintf(loc_id_aux, " %d", msg_in->local_id);
     sprintf(value1_aux, " %d", msg_in->dev_state[0]);
+    printf("deu certo ate no sprintf2\n");
     sprintf(value2_aux, " %d", msg_in->dev_state[1]);
 
+    printf("deu certo ate no  strcat\n");
+    strcat(str_out, "request_msg> ");
     strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
     strcat(str_out, value1_aux);
     strcat(str_out, value2_aux);
 
+    printf("deu certo ate no free\n");
     free(dev_id_aux);
     free(loc_id_aux);
     free(value1_aux);

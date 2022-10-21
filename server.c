@@ -96,13 +96,17 @@ int main(int argc, char **argv){
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
         //Recebe msg em formato de [request_msg] e salva no msg_buf
+        printf("teste 0\n");
         struct request_msg *msg_buf = malloc(MSGSZ);
+        printf("alocou msg_buf\n");
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
         printf("recebeu\n");
-
+    
         //Imprime a mensagem em formato de string no terminal
         char *str_out = malloc(MSGSZ);
+        printf("alocou str_out\n");
         msg2string(str_out, msg_buf);
+        printf("msg2string deu\n");
         printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, str_out);
 
         //Desaloca espaco da string e mensagem
