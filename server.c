@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-
 #define BUFSZ 1024
 #define MSGSZ 1024
 
