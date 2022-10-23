@@ -10,6 +10,13 @@
 #define MSGSZ 1024
 #define MAX_STATE_VALUES 2
 
+
+//Estrutura que guarda uma mensagem de controle (erro ou sucesso)
+struct control_msg{
+    char *tipo;
+    unsigned codigo;
+};
+
 //Estrutura que guarda uma mensagem para o servidor
 struct request_msg{
     char *type;
@@ -99,46 +106,11 @@ void string2msg(char *str_in, struct request_msg *msg_out){
 
 int main(){
     // --- TESTES --- // 
-    printf("Teste do string2msg\n");
+    printf("Teste do control_msg\n");
 
-    //String -> MSG
-    char str_in[50] = {"REQ 13 90 12 22"};
-    struct request_msg *msg_teste = malloc(MSGSZ);
-    string2msg(str_in, msg_teste);
-    
-
-    printf("tipo: %s\n", msg_teste->type);
-    printf("loc_id: %d\n", msg_teste->local_id);
-    printf("dev_id: %d\n", msg_teste->dev_id);
-    for(int i = 0; i < sizeof(msg_teste->dev_state)/ sizeof(int); i++){
-        printf("dev_state[%d]: %d\n", i, msg_teste->dev_state[i]);
-    }
-
-    free(msg_teste->dev_state); //desaloca o vetor de valores
-    free(msg_teste);    
-
-    //MSG -> String
-    // char *str_out = malloc(MSGSZ);
-    // msg2string(str_out, msg_teste);
-    // puts(str_out);
-    // free(str_out);
-
-    //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
-    // struct request_msg *msg_teste = malloc(MSGSZ);
-    // char *tipo = "INS_REQ"; 
-    // int *vec;
-    // int vec_aux[2] = {2, 3};
-    // vec = vec_aux;
-    // char *str_out = malloc(MSGSZ);
-
-    // build_msg(msg_teste, tipo, 13, 90, vec);
-
-    // msg2string(str_out, msg_teste);
-
-    // puts(str_out);
-    
-    // free(msg_teste);
-    // free(str_out);
+    struct control_msg teste;
+    teste.tipo = ERROR;
+    printf("%d", teste.tipo);
 
     return 0;
 }

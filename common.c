@@ -24,15 +24,30 @@ struct request_msg{
     int *dev_state;
 };
 
+//Estrutura que guarda uma mensagem de controle (erro ou sucesso)
+// enum control_msg_type{INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ};
+// struct control_msg{
+//     char *type;
+//     unsigned code;
+// };
+
 //Funcao pra inicializar mensagem de requisicao (cliente -> servidor)
-void build_request_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec){
+void build_request_msg(struct request_msg *msg_out,char *tipo, int loc, int dev, int *state_vec){
     msg_out->type = tipo;
     msg_out->dev_id = dev;
     msg_out->local_id = loc;
     msg_out->dev_state = state_vec;
 
-    printf("[log] Msg built\n");
+    printf("[log] Request_msg built\n");
 }
+
+//Funcao pra inicializar mensagem de controle (cliente -> servidor)
+// void build_control_msg(struct control_msg *msg_out, char *tipo, unsigned codigo){
+//     msg_out->type = tipo;
+//     msg_out->code = codigo;
+
+//     printf("[log] Control_msg built\n");
+// }
 
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
 // Primeiro transforma cada parte da mensagem em string e depois concatena tudo 

@@ -16,6 +16,61 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
+//Cada dispositivo tem um ID, um estado de on/off e um estado de dados
+struct dispositivo{
+    unsigned id;
+    unsigned ligado;
+    unsigned dado;
+};
+
+//Cada local tem no maximo 5 dispositivos
+struct local{
+    unsigned id;
+    struct dispositivo dispositivos[5];
+};
+
+unsigned is_dev_id_valid(int dev_id){
+    if(dev_id >= 1 && dev_id <= 5){
+        return 1;
+    }
+    return 0;
+}
+
+// [OBS] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
+//Funcao que trata a mensagem que chega do cliente
+void server_action(struct request_msg *msg, struct dispositivo *dispositivos[5]){
+    //Caso INS_REQ
+    if(strcmp(msg->type, "INS_REQ")){
+        if(!is_dev_id_valid(msg->dev_id)){
+            //Envia ERROR 03
+            return;
+        }
+        
+        dispositivos[msg->dev_id]->id = msg->dev_id;
+        dispositivos[msg->dev_id]->ligado = msg->dev_state[0];
+        dispositivos[msg->dev_id]->dado = msg->dev_state[1];
+        
+        //Envia OK 01
+    }
+
+    // else if(strcmp(msg->type, "REM_REQ")){
+
+    // }
+    // else if(strcmp(msg->type, "CH_REQ")){
+
+    // }
+    // else if(strcmp(msg->type, "DEV_REQ")){
+
+    // }
+    // else if(strcmp(msg->type, "LOC_REQ")){
+
+    // }
+    else{
+
+    }
+ 
+}
+
 //argv[1] -> familia IP
 //argv[2] -> porta do processo
 int main(int argc, char **argv){
@@ -84,11 +139,6 @@ int main(int argc, char **argv){
         printf("[log] connection from %s\n", caddrstr);
 
         // ------------- TROCA DE MENSAGENS ------------- //
-        //SERVER 1.0 - funcionamento: 
-        // - recebe mensagem de requisicao do cliente e salva no buffer
-        // - envia o endereco do cliente de volta pra ele
-        // - encerra conexao com o cliente e volta a esperar novas conexoes
-        
         // --- BUFFER --- //
         char buf[BUFSZ];
         memset(buf, 0, BUFSZ);
