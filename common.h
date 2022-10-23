@@ -29,3 +29,5 @@ struct request_msg{
 void build_request_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec);
 
 void msg2string(char *str_out, struct request_msg *msg_in);
+
+void string2msg(char *str_in, struct request_msg *msg_out);

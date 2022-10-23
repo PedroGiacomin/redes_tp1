@@ -100,8 +100,21 @@ int main(int argc, char **argv){
         memset(msg_buf, 0, BUFSZ);
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
     
-        //Imprime a mensagem em formato de string no terminal
-        printf("[msg] %s, %d bytes: %s\n", caddrstr, (int)count, msg_buf);
+        //Transforma a mensagem em [request_msg] e guarda em msg_recebida
+        struct request_msg *msg_recebida = malloc(MSGSZ);
+        string2msg(msg_buf, msg_recebida);
+
+        //Printa o conteudo da msg na tela
+        printf("tipo: %s\n", msg_recebida->type);
+        printf("loc_id: %d\n", msg_recebida->local_id);
+        printf("dev_id: %d\n", msg_recebida->dev_id);
+        for(int i = 0; i < sizeof(msg_recebida->dev_state)/ sizeof(int); i++){
+            printf("dev_state[%d]: %d\n", i, msg_recebida->dev_state[i]);
+        }
+
+        //Desaloca a mensagem recebida do cliente
+        free(msg_recebida->dev_state); //desaloca o vetor de valores
+        free(msg_recebida);
 
         // --- CRIACAO DA MENSAGEM (response) --- //
         //Salva o proprio endereco do cliente no buffer

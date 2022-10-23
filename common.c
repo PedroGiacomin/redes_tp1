@@ -52,21 +52,51 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
     for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
         char *aux = malloc(3);
-        sprintf(aux, "% d", msg_in->dev_state[i]);
+        sprintf(aux, " %d", msg_in->dev_state[i]);
         strcat(values_aux, aux); 
         free(aux);
     }
 
-    strcat(str_out, "request_msg> ");
+    //constroi a string completa
     strcat(str_out, msg_in->type);
     strcat(str_out, dev_id_aux);
     strcat(str_out, loc_id_aux);
     strcat(str_out, values_aux);
 
+    //desaloca variaveis auxiliares
     free(dev_id_aux);
     free(loc_id_aux);
     free(values_aux);
 }
+
+// Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
+// O vetor tem de valores tem de ser alocado dinamicamente e depois desalocado
+void string2msg(char *str_in, struct request_msg *msg_out){
+
+    // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
+    // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
+    char *token = strtok(str_in, " ");
+    msg_out->type = token;      // pega o tipo
+    
+    token = strtok(NULL, " ");
+    msg_out->local_id = atoi(token);   // pega o local_id, atoi eh uma funcao parse de string pra inteiro
+
+    token = strtok(NULL, " ");
+    msg_out->dev_id =  atoi(token);   // pega o dev_id
+
+    // loop pra pegar cada valor do vetor dev_state, que tem tamanho variavel, e construi-lo
+    int i = 0;
+    token = strtok(NULL, " ");
+    while(token != NULL){
+                
+        msg_out->dev_state = realloc(msg_out->dev_state, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
+        msg_out->dev_state[i] = atoi(token);                //atribui valor ao proximo elemento do vetor
+
+        token = strtok(NULL, " ");              //corta a string novamente
+        i++;
+    }
+}
+
 
 // --- DEFINICAO DE ENDERECOS --- // 
 

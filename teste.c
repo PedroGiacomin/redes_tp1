@@ -29,7 +29,7 @@ void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *s
 }
 
 //Funcao para desalocar os vetores de uma req_msg
-void unbuild_msg(struct request_msg *msg){
+void free_string2msg(struct request_msg *msg){
     
     //free(msg->type);
     free(msg->dev_state); 
@@ -70,13 +70,12 @@ void msg2string(char *str_out, struct request_msg *msg_in){
 }
 
 // Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
-// Aloca o espaco da request_msg dinamicamente
+// O vetor tem de valores tem de ser alocado dinamicamente e depois desalocado
 void string2msg(char *str_in, struct request_msg *msg_out){
 
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
     // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
     char *token = strtok(str_in, " ");
-    msg_out->type = malloc(strlen(token)); //aloca
     msg_out->type = token;      // pega o tipo
     
     token = strtok(NULL, " ");
@@ -106,6 +105,7 @@ int main(){
     char str_in[50] = {"REQ 13 90 12 22"};
     struct request_msg *msg_teste = malloc(MSGSZ);
     string2msg(str_in, msg_teste);
+    
 
     printf("tipo: %s\n", msg_teste->type);
     printf("loc_id: %d\n", msg_teste->local_id);
@@ -114,7 +114,7 @@ int main(){
         printf("dev_state[%d]: %d\n", i, msg_teste->dev_state[i]);
     }
 
-    unbuild_msg(msg_teste); //desaloca o vetor de valores
+    free(msg_teste->dev_state); //desaloca o vetor de valores
     free(msg_teste);    
 
     //MSG -> String
