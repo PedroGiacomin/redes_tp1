@@ -28,6 +28,13 @@ void build_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *s
     printf("Msg built\n");
 }
 
+//Funcao para desalocar os vetores de uma req_msg
+void unbuild_msg(struct request_msg *msg){
+    
+    //free(msg->type);
+    free(msg->dev_state); 
+}
+
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
 // Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
 void msg2string(char *str_out, struct request_msg *msg_in){
@@ -63,55 +70,58 @@ void msg2string(char *str_out, struct request_msg *msg_in){
 }
 
 // Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
+// Aloca o espaco da request_msg dinamicamente
 void string2msg(char *str_in, struct request_msg *msg_out){
-    
-}
-
-int main(){
-    // --- TESTES --- // 
-    printf("Teste do string2msg\n");
-
-    
-    char palavra[50] = {"REQ 13 90 12 22"};
-    
-    //Sao as variaveis que vao guardar os valores dos parametros da mensagem lida da string, para construi-la depois
-    char *buf_tipo;
-    int buf_loc_id;
-    int buf_dev_id;
-    int *buf_values;
 
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
     // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
-    char *token = strtok(palavra, " ");
-    buf_tipo = token;      // pega o tipo
+    char *token = strtok(str_in, " ");
+    msg_out->type = malloc(strlen(token)); //aloca
+    msg_out->type = token;      // pega o tipo
     
     token = strtok(NULL, " ");
-    buf_loc_id = atoi(token);   // pega o loc_id, atoi eh uma funcao parse de string pra inteiro
+    msg_out->local_id = atoi(token);   // pega o local_id, atoi eh uma funcao parse de string pra inteiro
 
     token = strtok(NULL, " ");
-    buf_dev_id =  atoi(token);   // pega o dev_id
+    msg_out->dev_id =  atoi(token);   // pega o dev_id
 
     // loop pra pegar cada valor do vetor dev_state, que tem tamanho variavel, e construi-lo
     int i = 0;
     token = strtok(NULL, " ");
     while(token != NULL){
                 
-        buf_values = realloc(buf_values, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
-        buf_values[i] = atoi(token);            //atribui valor ao proximo elemento do vetor
+        msg_out->dev_state = realloc(msg_out->dev_state, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
+        msg_out->dev_state[i] = atoi(token);                //atribui valor ao proximo elemento do vetor
 
         token = strtok(NULL, " ");              //corta a string novamente
         i++;
     }
+}
 
-    printf("buf_tipo : %s\n", buf_tipo);
-    printf("buf_loc_id : %d\n", buf_loc_id);
-    printf("buf_dev_id : %d\n", buf_dev_id);
-    for(int i = 0; i < sizeof(buf_values)/sizeof(int); i++){
-        printf("buf_values[%d] = %d\n", i, buf_values[i]);
+int main(){
+    // --- TESTES --- // 
+    printf("Teste do string2msg\n");
+
+    //String -> MSG
+    char str_in[50] = {"REQ 13 90 12 22"};
+    struct request_msg *msg_teste = malloc(MSGSZ);
+    string2msg(str_in, msg_teste);
+
+    printf("tipo: %s\n", msg_teste->type);
+    printf("loc_id: %d\n", msg_teste->local_id);
+    printf("dev_id: %d\n", msg_teste->dev_id);
+    for(int i = 0; i < sizeof(msg_teste->dev_state)/ sizeof(int); i++){
+        printf("dev_state[%d]: %d\n", i, msg_teste->dev_state[i]);
     }
 
+    unbuild_msg(msg_teste); //desaloca o vetor de valores
+    free(msg_teste);    
 
-    free(buf_values);   //libera
+    //MSG -> String
+    // char *str_out = malloc(MSGSZ);
+    // msg2string(str_out, msg_teste);
+    // puts(str_out);
+    // free(str_out);
 
     //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
     // struct request_msg *msg_teste = malloc(MSGSZ);
@@ -121,7 +131,7 @@ int main(){
     // vec = vec_aux;
     // char *str_out = malloc(MSGSZ);
 
-    //build_msg(msg_teste, tipo, 13, 90, vec);
+    // build_msg(msg_teste, tipo, 13, 90, vec);
 
     // msg2string(str_out, msg_teste);
 
