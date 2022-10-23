@@ -62,26 +62,73 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     free(values_aux);
 }
 
+// Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
+void string2msg(char *str_in, struct request_msg *msg_out){
+    
+}
+
 int main(){
     // --- TESTES --- // 
-    printf("Teste do build_msg\n");
+    printf("Teste do string2msg\n");
+
+    
+    char palavra[50] = {"REQ 13 90 12 22"};
+    
+    //Sao as variaveis que vao guardar os valores dos parametros da mensagem lida da string, para construi-la depois
+    char *buf_tipo;
+    int buf_loc_id;
+    int buf_dev_id;
+    int *buf_values;
+
+    // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
+    // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
+    char *token = strtok(palavra, " ");
+    buf_tipo = token;      // pega o tipo
+    
+    token = strtok(NULL, " ");
+    buf_loc_id = atoi(token);   // pega o loc_id, atoi eh uma funcao parse de string pra inteiro
+
+    token = strtok(NULL, " ");
+    buf_dev_id =  atoi(token);   // pega o dev_id
+
+    // loop pra pegar cada valor do vetor dev_state, que tem tamanho variavel, e construi-lo
+    int i = 0;
+    token = strtok(NULL, " ");
+    while(token != NULL){
+                
+        buf_values = realloc(buf_values, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
+        buf_values[i] = atoi(token);            //atribui valor ao proximo elemento do vetor
+
+        token = strtok(NULL, " ");              //corta a string novamente
+        i++;
+    }
+
+    printf("buf_tipo : %s\n", buf_tipo);
+    printf("buf_loc_id : %d\n", buf_loc_id);
+    printf("buf_dev_id : %d\n", buf_dev_id);
+    for(int i = 0; i < sizeof(buf_values)/sizeof(int); i++){
+        printf("buf_values[%d] = %d\n", i, buf_values[i]);
+    }
+
+
+    free(buf_values);   //libera
 
     //Aloca 4B, que eh mais que suficiente para a mensagem a ser enviada 
-    struct request_msg *msg_teste = malloc(MSGSZ);
-    char *tipo = "INS_REQ"; 
-    int *vec;
-    int vec_aux[2] = {2, 3};
-    vec = vec_aux;
-    char *str_out = malloc(MSGSZ);
+    // struct request_msg *msg_teste = malloc(MSGSZ);
+    // char *tipo = "INS_REQ"; 
+    // int *vec;
+    // int vec_aux[2] = {2, 3};
+    // vec = vec_aux;
+    // char *str_out = malloc(MSGSZ);
 
-    build_msg(msg_teste, tipo, 13, 90, vec);
+    //build_msg(msg_teste, tipo, 13, 90, vec);
 
-    msg2string(str_out, msg_teste);
+    // msg2string(str_out, msg_teste);
 
-    puts(str_out);
+    // puts(str_out);
     
-    free(msg_teste);
-    free(str_out);
+    // free(msg_teste);
+    // free(str_out);
 
     return 0;
 }
