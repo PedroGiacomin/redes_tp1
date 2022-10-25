@@ -7,4 +7,4 @@ clean:
 	rm *.o client server teste
 
 teste:
-	gcc -Wall teste.c -o teste
+	gcc -Wall -o teste teste.c 

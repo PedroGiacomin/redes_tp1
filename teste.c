@@ -7,14 +7,14 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#define MSGSZ 1024
+#define MSGSZ 500
 #define MAX_STATE_VALUES 2
 
 
 //Estrutura que guarda uma mensagem de controle (erro ou sucesso)
 struct control_msg{
-    char *tipo;
-    unsigned codigo;
+    char *type;
+    unsigned code;
 };
 
 //Estrutura que guarda uma mensagem para o servidor
@@ -41,6 +41,34 @@ void free_string2msg(struct request_msg *msg){
     //free(msg->type);
     free(msg->dev_state); 
 }
+
+// [OBS] - Como as mensagens de controle tem apenas dois parametros, optei por já criar direto como string sem uma struct intermediaria
+//Funcao pra construir mensagem de ERROR jah em formato de string, voltando apenas o codigo
+void build_ERROR_msg(char *msg_out, unsigned codigo){
+    
+    //parse int->str
+    char *code_aux = malloc(sizeof(3));
+    sprintf(code_aux, " %02u", codigo);
+    
+    strcat(msg_out, "ERROR");
+    strcat(msg_out, code_aux);
+    strcat(msg_out, "\n");
+
+    free(code_aux);
+}
+
+// Transforma uma [control_msg] em uma [string] no formato TYPE CODE 
+void control_msg2string(char *str_out, struct control_msg *msg_in){
+
+    char *code_aux = malloc(sizeof(msg_in->code));
+    sprintf(code_aux, " %u", msg_in->code);
+
+    strcat(str_out, msg_in->type);
+    strcat(str_out, code_aux);
+
+    free(code_aux);
+}
+
 
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
 // Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
@@ -108,9 +136,9 @@ int main(){
     // --- TESTES --- // 
     printf("Teste do control_msg\n");
 
-    struct control_msg teste;
-    teste.tipo = ERROR;
-    printf("%d", teste.tipo);
-
+    char *str_out = malloc(MSGSZ);
+    build_ERROR_msg(str_out, 2);
+    printf("%s\n", str_out);
+    
     return 0;
 }
