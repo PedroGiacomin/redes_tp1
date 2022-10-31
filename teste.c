@@ -43,14 +43,28 @@ void free_string2msg(struct request_msg *msg){
 }
 
 // [OBS] - Como as mensagens de controle tem apenas dois parametros, optei por já criar direto como string sem uma struct intermediaria
-//Funcao pra construir mensagem de ERROR jah em formato de string, voltando apenas o codigo
-void build_ERROR_msg(char *msg_out, unsigned codigo){
+//Funcao pra construir mensagem de ERROR jah em formato de string, fornecendo apenas o codigo
+void build_error_msg(char *msg_out, unsigned codigo){
     
     //parse int->str
     char *code_aux = malloc(sizeof(3));
     sprintf(code_aux, " %02u", codigo);
     
-    strcat(msg_out, "ERROR");
+    strcat(msg_out, "ERROR ");
+    strcat(msg_out, code_aux);
+    strcat(msg_out, "\n");
+
+    free(code_aux);
+}
+
+//Funcao pra construir mensagem de OK jah em formato de string, fornecendo apenas o codigo
+void build_ok_msg(char *msg_out, unsigned codigo){
+    
+    //parse int->str
+    char *code_aux = malloc(sizeof(3));
+    sprintf(code_aux, " %02u", codigo);
+    
+    strcat(msg_out, "OK ");
     strcat(msg_out, code_aux);
     strcat(msg_out, "\n");
 
@@ -137,7 +151,7 @@ int main(){
     printf("Teste do control_msg\n");
 
     char *str_out = malloc(MSGSZ);
-    build_ERROR_msg(str_out, 2);
+    build_error_msg(str_out, 2);
     printf("%s\n", str_out);
     
     return 0;

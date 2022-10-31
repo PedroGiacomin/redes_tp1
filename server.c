@@ -29,6 +29,34 @@ struct local{
     struct dispositivo dispositivos[5];
 };
 
+// [OBS] - Como as mensagens de controle tem apenas dois parametros, optei por já criar direto como string sem uma struct intermediaria
+//Funcoes pra construir mensagens de controle ERROR e OK jah em formato de string, fornecendo apenas o codigo
+void build_error_msg(char *msg_out, unsigned codigo){
+    
+    //parse int->str
+    char *code_aux = malloc(sizeof(3));
+    sprintf(code_aux, "%02u", codigo);
+    
+    strcat(msg_out, "ERROR ");
+    strcat(msg_out, code_aux);
+    strcat(msg_out, "\n");
+
+    free(code_aux);
+}
+void build_ok_msg(char *msg_out, unsigned codigo){
+    
+    //parse int->str
+    char *code_aux = malloc(sizeof(3));
+    sprintf(code_aux, "%02u", codigo);
+    
+    strcat(msg_out, "OK ");
+    strcat(msg_out, code_aux);
+    strcat(msg_out, "\n");
+
+    free(code_aux);
+}
+
+//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0
 unsigned is_dev_id_valid(int dev_id){
     if(dev_id >= 1 && dev_id <= 5){
         return 1;
@@ -37,20 +65,22 @@ unsigned is_dev_id_valid(int dev_id){
 }
 
 // [OBS] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
-//Funcao que trata a mensagem que chega do cliente
-void server_action(struct request_msg *msg, struct dispositivo *dispositivos[5]){
+//Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle para o cliente na variavel msg_out
+void process_request(struct request_msg *msg, struct dispositivo dispositivos[5], char *msg_out){
     //Caso INS_REQ
     if(strcmp(msg->type, "INS_REQ")){
         if(!is_dev_id_valid(msg->dev_id)){
             //Envia ERROR 03
+            build_error_msg(msg_out, 3);
             return;
         }
         
-        dispositivos[msg->dev_id]->id = msg->dev_id;
-        dispositivos[msg->dev_id]->ligado = msg->dev_state[0];
-        dispositivos[msg->dev_id]->dado = msg->dev_state[1];
+        dispositivos[msg->dev_id].id = msg->dev_id;
+        dispositivos[msg->dev_id].ligado = msg->dev_state[0];
+        dispositivos[msg->dev_id].dado = msg->dev_state[1];
         
         //Envia OK 01
+        build_ok_msg(msg_out, 1);
     }
 
     // else if(strcmp(msg->type, "REM_REQ")){
@@ -77,6 +107,18 @@ int main(int argc, char **argv){
     // Garantia de que o programa foi inicializado corretamente
     if(argc < 3){
         usage();
+    }
+
+    // ------------- DB DO SERVER ------------- //
+    //cada local por padrao tem um vetor de 5 dispositivos
+    struct local locais[5];
+
+    //inicializa o banco de dados com os ids 0
+    for(int i = 0; i < 5; i++){
+        locais[i].id = 0;
+        for(int j = 0; j < 5; j++){
+            locais[i].dispositivos[j].id = 0;
+        }
     }
 
     // ------------- CONEXAO COM CLIENTE ------------- //
@@ -161,6 +203,10 @@ int main(int argc, char **argv){
             printf("dev_state[%d]: %d\n", i, msg_recebida->dev_state[i]);
         }
 
+        //Processa a mensagem e guarda a mensagem de controle de resposta ao cliente em msg_buf
+        memset(msg_buf, 0, BUFSZ);
+        process_request(msg_recebida, locais->dispositivos, msg_buf);
+
         //Desaloca a mensagem recebida do cliente
         free(msg_recebida->dev_state); //desaloca o vetor de valores
         free(msg_recebida);
@@ -168,7 +214,7 @@ int main(int argc, char **argv){
         // --- CRIACAO DA MENSAGEM (response) --- //
         //Salva o proprio endereco do cliente no buffer
         //(num primeiro momento a mensagem eh so esse endereco)
-        sprintf(buf, "Oi cliente <%.900s>, recebi sua mensagem\n", caddrstr);
+        sprintf(buf, "%.900s", msg_buf);
 
         // --- ENVIO DA MENSAGEM (response) --- //
         count = send(client_sock, buf, strlen(buf) + 1, 0);
