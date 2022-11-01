@@ -64,41 +64,86 @@ unsigned is_dev_id_valid(int dev_id){
     return 0;
 }
 
-// [OBS] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
-//Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle para o cliente na variavel msg_out
-void process_request(struct request_msg *msg, struct dispositivo dispositivos[5], char *msg_out){
-    //Caso INS_REQ
-    if(strcmp(msg->type, "INS_REQ")){
-        if(!is_dev_id_valid(msg->dev_id)){
-            //Envia ERROR 03
-            build_error_msg(msg_out, 3);
-            return;
-        }
+//Tive que fazer duas funcoes porque nao era possivel acessar o request_type por dentro da request_msg, assim tambem foi possivel usar switch case
+enum REQ_TYPE {INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ};
+unsigned parse_req_type(const char *req_type_in){
+    puts(req_type_in);
+    if(!strcmp(req_type_in, "INS_REQ"))
+        return INS_REQ;
+    else if (!strcmp(req_type_in, "REM_REQ"))
+        return REM_REQ;
+    else if (!strcmp(req_type_in, "CH_REQ"))
+        return CH_REQ;
+    else if (!strcmp(req_type_in, "DEV_REQ"))
+        return DEV_REQ;
+    else if (!strcmp(req_type_in, "LOC_REQ"))
+        return LOC_REQ;
+    else 
+        return 0;
+}
+
+// [OBS - ANTES] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
+// [OBS - DEPOIS] - depois de fazer a funcao de parse deu pra usar switch case
+//Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle (OK ou ERROR) ou de RESPONSE para o cliente na variavel msg_out
+//A ideia eh que cada dispositivo sera instalado na posicao do vetor de seu respectivo dev_id
+void process_request(struct request_msg *msg, unsigned req_type,  struct dispositivo dispositivos[5], char *msg_out){
+
+    switch (req_type){
+        case INS_REQ:
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(msg->dev_id)){
+                build_error_msg(msg_out, 3); 
+                return;
+            }
+
+            dispositivos[msg->dev_id].id = msg->dev_id;
+            dispositivos[msg->dev_id].ligado = msg->dev_state[0];
+            dispositivos[msg->dev_id].dado = msg->dev_state[1];
+
+            printf("instalado\n");
+            build_ok_msg(msg_out, 1); //Envia OK 01
+        break;
+
+        case REM_REQ:
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(msg->dev_id)){
+                build_error_msg(msg_out, 3); 
+                return;
+            }
+
+            //testa se o dispositivo ja estah instalado
+            if(dispositivos[msg->dev_id].id == 0){
+                build_error_msg(msg_out, 1);
+                return;
+            }
+            
+            //se estiver instalado, desinstala (zerando todos os seus atributos no vetor do DB)
+            dispositivos[msg->dev_id].id = 0;
+            dispositivos[msg->dev_id].ligado = 0;
+            dispositivos[msg->dev_id].dado = 0;
+
+            printf("removido\n");
+            build_ok_msg(msg_out, 2);
+
+            break;
+
+        case CH_REQ:
+
+            break;
+    
+
+        case DEV_REQ:
+
+            break;
+
+        case LOC_REQ:
+
+            break;
         
-        dispositivos[msg->dev_id].id = msg->dev_id;
-        dispositivos[msg->dev_id].ligado = msg->dev_state[0];
-        dispositivos[msg->dev_id].dado = msg->dev_state[1];
-        
-        //Envia OK 01
-        build_ok_msg(msg_out, 1);
+        default:
+
+            break;
     }
-
-    // else if(strcmp(msg->type, "REM_REQ")){
-
-    // }
-    // else if(strcmp(msg->type, "CH_REQ")){
-
-    // }
-    // else if(strcmp(msg->type, "DEV_REQ")){
-
-    // }
-    // else if(strcmp(msg->type, "LOC_REQ")){
-
-    // }
-    else{
-
-    }
- 
 }
 
 //argv[1] -> familia IP
@@ -195,20 +240,12 @@ int main(int argc, char **argv){
         struct request_msg *msg_recebida = malloc(MSGSZ);
         string2msg(msg_buf, msg_recebida);
 
-        //Printa o conteudo da msg na tela
-        printf("tipo: %s\n", msg_recebida->type);
-        printf("loc_id: %d\n", msg_recebida->local_id);
-        printf("dev_id: %d\n", msg_recebida->dev_id);
-        for(int i = 0; i < sizeof(msg_recebida->dev_state)/ sizeof(int); i++){
-            printf("dev_state[%d]: %d\n", i, msg_recebida->dev_state[i]);
-        }
-
         //Processa a mensagem e guarda a mensagem de controle de resposta ao cliente em msg_buf
+        unsigned req_type = parse_req_type(msg_recebida->type);
         memset(msg_buf, 0, BUFSZ);
-        process_request(msg_recebida, locais->dispositivos, msg_buf);
+        process_request(msg_recebida, req_type, locais->dispositivos, msg_buf);
 
         //Desaloca a mensagem recebida do cliente
-        free(msg_recebida->dev_state); //desaloca o vetor de valores
         free(msg_recebida);
 
         // --- CRIACAO DA MENSAGEM (response) --- //

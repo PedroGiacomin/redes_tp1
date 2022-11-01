@@ -41,14 +41,6 @@ void build_request_msg(struct request_msg *msg_out,char *tipo, int loc, int dev,
     printf("[log] Request_msg built\n");
 }
 
-//Funcao pra inicializar mensagem de controle (cliente -> servidor)
-// void build_control_msg(struct control_msg *msg_out, char *tipo, unsigned codigo){
-//     msg_out->type = tipo;
-//     msg_out->code = codigo;
-
-//     printf("[log] Control_msg built\n");
-// }
-
 // Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
 // Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
 void msg2string(char *str_out, struct request_msg *msg_in){
@@ -91,7 +83,8 @@ void string2msg(char *str_in, struct request_msg *msg_out){
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
     // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
     char *token = strtok(str_in, " ");
-    msg_out->type = token;      // pega o tipo
+    msg_out->type = malloc(strlen(token));     //aloca espaco para a string tipo
+    msg_out->type = token;
     
     token = strtok(NULL, " ");
     msg_out->local_id = atoi(token);   // pega o local_id, atoi eh uma funcao parse de string pra inteiro
@@ -103,7 +96,6 @@ void string2msg(char *str_in, struct request_msg *msg_out){
     int i = 0;
     token = strtok(NULL, " ");
     while(token != NULL){
-                
         msg_out->dev_state = realloc(msg_out->dev_state, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
         msg_out->dev_state[i] = atoi(token);                //atribui valor ao proximo elemento do vetor
 
@@ -112,6 +104,11 @@ void string2msg(char *str_in, struct request_msg *msg_out){
     }
 }
 
+void free_req_msg(struct request_msg *msg){
+    free(msg);
+    free(msg); //desaloca o vetor de valores
+    free(msg);
+}
 
 // --- DEFINICAO DE ENDERECOS --- // 
 
