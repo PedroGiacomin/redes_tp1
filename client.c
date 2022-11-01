@@ -77,8 +77,8 @@ int main(int argc, char **argv){
 
     // --- CRIACAO DA MENSAGEM (request) --- // 
     struct request_msg *msg = malloc(MSGSZ); //guarda a msg
-    char *tipo = "REM_REQ"; //guarda o tipo
-    int valores[0] = {}; //guarda os valores
+    char *tipo = "INS_REQ"; //guarda o tipo
+    int valores[2] = {1, 2}; //guarda os valores
     build_request_msg(msg, tipo, 1, 22, valores); //constroi a msg
 
     char msg_buf[BUFSZ];

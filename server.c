@@ -86,6 +86,7 @@ unsigned parse_req_type(const char *req_type_in){
 // [OBS - ANTES] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
 // [OBS - DEPOIS] - depois de fazer a funcao de parse deu pra usar switch case
 //Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle (OK ou ERROR) ou de RESPONSE para o cliente na variavel msg_out
+// [ERRO] - Tive problema ao passar o database por referencia para a funcao process_request, mas deu certo usando esses colchetes
 
 // --- LOGICA DO DB --- //
 // - O banco de dados do servidor eh simplesmente um vetor de struct local com 5 posicoes. 
@@ -109,7 +110,7 @@ unsigned parse_req_type(const char *req_type_in){
 // que o dispositivo de ID j nao estah instalado naquele local
 
 //A ideia eh que cada dispositivo sera instalado na posicao do vetor de seu respectivo dev_id
-void process_request(struct request_msg *msg, unsigned req_type,  struct local *local, char *msg_out){
+void process_request(struct request_msg *msg, unsigned req_type,  struct local locais[], char *msg_out){
 
     switch (req_type){
         case INS_REQ:
@@ -119,9 +120,9 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local *
                 return;
             }
 
-            local->dispositivos[msg->dev_id].id = msg->dev_id;
-            local->dispositivos[msg->dev_id].ligado = msg->dev_state[0];
-            local->dispositivos[msg->dev_id].dado = msg->dev_state[1];
+            locais[msg->local_id].dispositivos[msg->dev_id].id = msg->dev_id;
+            locais[msg->local_id].dispositivos[msg->dev_id].ligado = msg->dev_state[0];
+            locais[msg->local_id].dispositivos[msg->dev_id].dado = msg->dev_state[1];
 
             printf("instalado\n");
             build_ok_msg(msg_out, 1); //Envia OK 01
@@ -135,15 +136,15 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local *
             }
 
             //testa se o dispositivo estah instalado, i.e., se o id do dispositivo na sua posicao correspondente eh 
-            if(local->dispositivos[msg->dev_id].id == 0){
+            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
                 build_error_msg(msg_out, 1);
                 return;
             }
             
             //se estiver instalado, desinstala (zerando todos os seus atributos no vetor do DB)
-            local->dispositivos[msg->dev_id].id = 0;
-            local->dispositivos[msg->dev_id].ligado = 0;
-            local->dispositivos[msg->dev_id].dado = 0;
+            locais[msg->local_id].dispositivos[msg->dev_id].id = 0;
+            locais[msg->local_id].dispositivos[msg->dev_id].ligado = 0;
+            locais[msg->local_id].dispositivos[msg->dev_id].dado = 0;
 
             printf("removido\n");
             build_ok_msg(msg_out, 2);
@@ -156,13 +157,28 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local *
                 build_error_msg(msg_out, 3); 
                 return;
             }
-
+            
+            //Testa se o dispositivo estah instalado no local
+            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
+                build_error_msg(msg_out, 1);
+                return;
+            }
+            else{
+                //se estiver instalado, muda seu estado
+                locais[msg->local_id].dispositivos[msg->dev_id].ligado = msg->dev_state[0];
+                locais[msg->local_id].dispositivos[msg->dev_id].dado = msg->dev_state[1];
+                build_ok_msg(msg_out, 3);
+            }
 
             break;
     
 
         case DEV_REQ:
-
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(msg->dev_id)){
+                build_error_msg(msg_out, 3); 
+                return;
+            }
             break;
 
         case LOC_REQ:
@@ -185,12 +201,11 @@ int main(int argc, char **argv){
 
     // ------------- DB DO SERVER ------------- //
     //cada local por padrao tem um vetor de 5 dispositivos
-    struct local *database = malloc(MAX_LOCAIS * sizeof(struct local));
-
+    struct local database[MAX_LOCAIS];
     //inicializa o banco de dados com os ids 0
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < MAX_LOCAIS; i++){
         database[i].id = 0;
-        for(int j = 0; j < 5; j++){
+        for(int j = 0; j < MAX_LOCAIS; j++){
             database[i].dispositivos[j].id = 0;
         }
     }
