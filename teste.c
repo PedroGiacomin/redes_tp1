@@ -407,3 +407,31 @@ int main(){
 
     return 0;
 }
+
+       else{
+                //Constroi a DEV_RES
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen("device"));
+                strcat(msg_out, "device");
+
+                char *aux = malloc(STR_MIN);
+                sprintf(aux, " %d", msg->dev_id);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+                
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(" in"));
+                strcat(msg_out, " in");
+
+                sprintf(aux, " %d", msg->local_id);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(":"));
+                strcat(msg_out, ":");
+
+                //Consulta o DB e insere as infos na string da msg de resposta 
+                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].ligado);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+                
+                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].dado);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+
+                free(aux);
+            }

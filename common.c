@@ -18,6 +18,7 @@ void logexit(const char *msg){
 // --- LÓGICA DAS MENSAGENS --- // 
 // - Toda mensagem de REQ ou RES possui uma string TYPE e um vetor de inteiros
 // - Cada inteiro em cada posicao significa um coisa diferente para cada tipo de mensagem, entao isso vai ter que ser taratado separadamente segundo tipo 
+
 struct reqres_msg{
     char *type;
     int *info;

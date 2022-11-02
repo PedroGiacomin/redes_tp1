@@ -11,6 +11,7 @@
 #define BUFSZ 1024
 #define MSGSZ 1024
 #define MAX_LOCAIS 5
+#define STR_MIN 8
 
 void usage(){
     printf("Chamada correta: ./server <v4/v6> <port>\n");
@@ -30,7 +31,6 @@ struct local{
     struct dispositivo dispositivos[5];
 };
 
-// [OBS] - Como as mensagens de controle tem apenas dois parametros, optei por já criar direto como string sem uma struct intermediaria
 //Funcoes pra construir mensagens de controle ERROR e OK jah em formato de string, fornecendo apenas o codigo
 void build_error_msg(char *msg_out, unsigned codigo){
     
@@ -57,6 +57,10 @@ void build_ok_msg(char *msg_out, unsigned codigo){
     free(code_aux);
 }
 
+//Funcoes para construir mensagem de resposta DEV_RES e LOC_RES
+void build_res_msg(char *msg_out){
+
+}
 //Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0
 unsigned is_dev_id_valid(int dev_id){
     if(dev_id >= 1 && dev_id <= 5){
@@ -124,7 +128,6 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
             locais[msg->local_id].dispositivos[msg->dev_id].ligado = msg->dev_state[0];
             locais[msg->local_id].dispositivos[msg->dev_id].dado = msg->dev_state[1];
 
-            printf("instalado\n");
             build_ok_msg(msg_out, 1); //Envia OK 01
         break;
 
@@ -181,13 +184,27 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
             }
 
             //Testa se o dispositivo estah instalado no local
+            printf("locais[msg->local_id].dispositivos[msg->dev_id].id> %d\n", locais[msg->local_id].dispositivos[msg->dev_id].id);
             if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
                 build_error_msg(msg_out, 1);
                 return;
             }
+
             else{
-                //se estiver instalado, retorna o estado numa req 
-                //Envia msg de resposta DEV_RES
+                //Constroi a DEV_RES
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_RES"));
+                strcat(msg_out, "DEV_RES");
+
+                char *aux = malloc(STR_MIN);
+
+                //Consulta o DB e insere as infos na string da msg de resposta 
+                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].ligado);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+                
+                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].dado);
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+                
+                free(aux);
             }
             break;
 
@@ -211,15 +228,26 @@ int main(int argc, char **argv){
 
     // ------------- DB DO SERVER ------------- //
     //cada local por padrao tem um vetor de 5 dispositivos
-    struct local database[MAX_LOCAIS];
+    struct local database[MAX_LOCAIS + 1];
     //inicializa o banco de dados com os ids 0
-    for(int i = 0; i < MAX_LOCAIS; i++){
-        database[i].id = 0;
-        for(int j = 0; j < MAX_LOCAIS; j++){
+    for(int i = 1; i <= MAX_LOCAIS; i++){
+        database[i].id = i;
+        for(int j = 1; j <= MAX_LOCAIS; j++){
             database[i].dispositivos[j].id = 0;
         }
     }
-
+    
+    database[5].dispositivos[3].id = 3;
+    database[5].dispositivos[3].ligado = 1;
+    database[5].dispositivos[3].dado = 40;
+    
+    // for(int i = 1; i <= MAX_LOCAIS; i++){
+    //     printf("loc> %d\n", database[i].id);
+    //     for(int j = 1; j <= MAX_LOCAIS; j++){
+    //         printf("\tdev> %d\n", database[i].dispositivos[j].id);
+    //     }
+    // }
+    
     // ------------- CONEXAO COM CLIENTE ------------- //
     // --- DEFINICAO DE v4|v6 E PORTA --- //
     // Salva a familia IP e a porta na variavel storage que eh do tipo POSIX certo pra guardar endereco
@@ -289,6 +317,7 @@ int main(int argc, char **argv){
         char msg_buf[BUFSZ];
         memset(msg_buf, 0, BUFSZ);
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
+        printf("%s", msg_buf); //Imprime a msg na tela
     
         //Transforma a mensagem em [request_msg] e guarda em msg_recebida
         struct request_msg *msg_recebida = malloc(MSGSZ);

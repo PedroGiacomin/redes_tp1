@@ -34,18 +34,28 @@ void usage(){
 // - Precisara ser feita uma funcao que interpreta o comando de uma forma diferente para cada identificacao inicial.
 // - No caso do show, ainda, eh necessario uma condicional para saber se eh uma consulta de device ou de local.
 // - Todas as palavras do comando devem ser testadas, pois um comando invalido gera uma desconexao do servidor
+//
+// - A interface vai receber uma mensagem de RESPOSTA do servidor e imprimir um aviso na tela segundo:
+// MENSAGEM     PRINT
+// ERROR 01     device not installed
+// ERROR 02     no devices
+// ERROR 03     invalid device
+// ERROR 04     invalid local
+// OK 01        successful installation
+// OK 02        successful removal
+// OK 03        successful change
+// DEV_RES      device <devId> in ComId: <valor1> <valor>
+// LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
 
-
-// A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
-// token guarda a palavra do comando que estah sendo processada no momento
-// retorna 0 se tiver algum erro, 1 se tiver tudo bem
-// testa erros em todas as etapas
-// Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao erradas, testa se strcmp != 0
-
-// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor
-// A string que vai ser enviada eh alocada dinamicamente
+// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor, alocada dinamicamente
 unsigned process_command(char *comando, char *msg_out){
     
+    // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
+    // token guarda a palavra do comando que estah sendo processada no momento
+    // retorna 0 se tiver algum erro, 1 se tiver tudo bem
+    // testa erros em todas as etapas
+    // Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao erradas, testa se strcmp != 0
+
     //Inicialmente, token tem a primeira palavra do comando, que eh a "identificacao" dele
     char *token = strtok(comando, " ");
     if(!strcmp(token, "install")){
@@ -221,17 +231,11 @@ unsigned process_command(char *comando, char *msg_out){
     return 1;
 }
 
-// - A interface vai receber uma mensagem de RESPOSTA do servidor e imprimir um aviso na tela segundo:
-// MENSAGEM     PRINT
-// ERROR 01     device not installed
-// ERROR 02     no devices
-// ERROR 03     invalid device
-// ERROR 04     invalid local
-// OK 01        successful installation
-// OK 02        successful removal
-// OK 03        successful change
-// DEV_RES      device <devId> in ComId: <valor1> <valor>
-// LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
+//  
+void process_resmsg(char *msg_in, char *str_out){
+
+
+}
 
 //argv[1] -> IP do servidor
 //argv[2] -> porta do processo
