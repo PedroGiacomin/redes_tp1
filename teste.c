@@ -201,17 +201,16 @@ void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
 // - Todas as palavras do comando devem ser testadas, pois um comando invalido gera uma desconexao do servidor
 
 
-// A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
-// Na primeira chamada passamos a string a ser cortada e depois passamos NULL
+// A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
+// token guarda a palavra do comando que estah sendo processada no momento
 // retorna 0 se tiver algum erro, 1 se tiver tudo bem
-// testa por erros em todas as etapas. 
-// Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao certas, testa se strcmp != 0
+// testa erros em todas as etapas
+// Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao erradas, testa se strcmp != 0
 
-// Transformar um comando em uma string no formato pornto pra enviar pro servidor
+// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor
 // A string que vai ser enviada eh alocada dinamicamente
 unsigned process_command(char *comando, char *msg_out){
     
-    //token guarda a palavra do comando que estah sendo processada no momento, sempre entre " "
     //Inicialmente, token tem a primeira palavra do comando, que eh a "identificacao" dele
     char *token = strtok(comando, " ");
     if(!strcmp(token, "install")){
