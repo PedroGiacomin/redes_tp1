@@ -7,6 +7,7 @@
 
 #define MSGSZ 1024
 #define MAX_STATE_VALUES 2
+#define STR_MIN 8
 
 // --- TRATAMENTO DE ERROS --- //
 void logexit(const char *msg){
@@ -14,7 +15,13 @@ void logexit(const char *msg){
     exit(EXIT_FAILURE);
 }
 
-// --- TRATAMENTO DE MENSAGENS --- // 
+// --- LÓGICA DAS MENSAGENS --- // 
+// - Toda mensagem de REQ ou RES possui uma string TYPE e um vetor de inteiros
+// - Cada inteiro em cada posicao significa um coisa diferente para cada tipo de mensagem, entao isso vai ter que ser taratado separadamente segundo tipo 
+struct reqres_msg{
+    char *type;
+    int *info;
+};
 
 //Estrutura que guarda uma mensagem de requisicao para o servidor
 struct request_msg{
@@ -55,7 +62,7 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     
     sprintf(dev_id_aux, " %d", msg_in->dev_id);
     sprintf(loc_id_aux, " %d", msg_in->local_id);
-
+    
     //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
     for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
         char *aux = malloc(3);
@@ -75,6 +82,30 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     free(loc_id_aux);
     free(values_aux);
 }
+
+// Transforma uma [reqres_msg] em uma [string] no formato TYPE INFO[0] INFO[1] ...
+// Aloca a string da mensagem final dinamicamente
+void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
+
+    //comeca a construir a string pelo tipo
+    realloc(str_out, strlen(msg_in->type));
+    strcat(str_out, msg_in->type); 
+
+    //parse int[] -> string
+    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    for(int i = 0; i < sizeof(msg_in->info)/sizeof(int); i++){
+        char *aux = malloc(STR_MIN);
+        sprintf(aux, " %d", msg_in->info[i]); //parse int -> str
+        realloc(str_out, strlen(aux));
+        strcat(str_out, aux); 
+        free(aux);
+    }
+
+    //as mensagens devem terminar em \n
+    realloc(str_out, strlen("\n"));
+    strcat(str_out, "\n"); 
+}
+
 
 // Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
 // O vetor tem de valores tem de ser alocado dinamicamente e depois desalocado

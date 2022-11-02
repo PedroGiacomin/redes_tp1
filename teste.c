@@ -9,6 +9,7 @@
 
 #define MSGSZ 500
 #define MAX_STATE_VALUES 2
+#define STR_MIN 8
 
 
 //Estrutura que guarda uma mensagem de controle (erro ou sucesso)
@@ -146,12 +147,56 @@ void string2msg(char *str_in, struct request_msg *msg_out){
     }
 }
 
+struct reqres_msg{
+    char *type;
+    int *info;
+};
+
+//Funcao pra inicializar mensagem de reqres (cliente -> servidor)
+void build_reqres_msg(struct reqres_msg *msg_out, char *tipo, int *info_vec){
+    msg_out->type = tipo;
+    msg_out->info = info_vec;
+
+    printf("[log] Request_msg built\n");
+}
+
+// Transforma uma [reqres_msg] em uma [string] no formato TYPE INFO[0] INFO[1] ...
+// Aloca a string da mensagem final dinamicamente
+void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
+
+    //comeca a construir a string pelo tipo
+    //o reallloc pode mandar pra uma posicao nova, mas retorna o ponteiro para a nova memoria alocada
+    str_out = realloc(str_out, strlen(msg_in->type));
+    strcat(str_out, msg_in->type); 
+
+    //parse int[] -> string
+    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    for(int i = 0; i < sizeof(msg_in->info)/sizeof(int); i++){
+        char *aux = malloc(STR_MIN);
+        sprintf(aux, " %d", msg_in->info[i]); //parse int -> str
+        str_out = realloc(str_out, strlen(aux));
+        strcat(str_out, aux); 
+        free(aux);
+    }
+
+    //as mensagens devem terminar em \n
+    str_out = realloc(str_out, strlen("\n"));
+    strcat(str_out, "\n"); 
+}
+
+
 int main(){
     // --- TESTES --- // 
-    printf("Teste do control_msg\n");
+    printf("Teste do reqres_msg2string\n");
 
-    char *str_out = malloc(MSGSZ);
-    build_error_msg(str_out, 2);
+    char *tipo = "INS_REQ";
+    int vec_aux[2] = {1, 2};
+
+    struct reqres_msg *msg_teste = malloc(MSGSZ);
+    build_reqres_msg(msg_teste, tipo, vec_aux);
+
+    char *str_out = malloc(0);
+    reqres_msg2string(str_out, msg_teste);
     printf("%s\n", str_out);
     
     return 0;

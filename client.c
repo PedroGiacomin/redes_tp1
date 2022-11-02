@@ -21,6 +21,32 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
+// --- LOGICA DA INTERFACE --- //
+// - A interface do cliente vai pegar um COMANDO do teclado e transformar numa mensagem de requisicao, segundo:
+//  <devId>, <locId> e <valuei> sao int 
+//  MENSAGEM     COMANDO      
+//  INS_REQ      install <devId> in <locId>: <value1> <value2>
+//  REM_REQ      remove <devId> in <locId>    
+//  CH_REQ       change <devId> in <locId>: <value1> <value2>
+//  DEV_REQ      show state <devId> in <locId>
+//  LOC_REQ      show state in <locId>
+// - Percebe-se que todos os comandos tem uma identificacao inicial: install, remove, change ou show.
+// - Precisara ser feita uma funcao que interpreta o comando de uma forma diferente para cada identificacao inicial.
+// - No caso do show, ainda, eh necessario uma condicional para saber se eh uma consulta de device ou de local.
+// - Todas as palavras do comando devem ser testadas, pois um comando invalido gera uma desconexao do servidor
+
+// - A interface vai receber uma mensagem de RESPOSTA do servidor e imprimir um aviso na tela segundo:
+// MENSAGEM     PRINT
+// ERROR 01     device not installed
+// ERROR 02     no devices
+// ERROR 03     invalid device
+// ERROR 04     invalid local
+// OK 01        successful installation
+// OK 02        successful removal
+// OK 03        successful change
+// DEV_RES      device <devId> in ComId: <valor1> <valor>
+// LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
+
 //argv[1] -> IP do servidor
 //argv[2] -> porta do processo
 int main(int argc, char **argv){
@@ -65,15 +91,12 @@ int main(int argc, char **argv){
     printf("conectado a %s\n", addrstr);
 
     // ------------- TROCA DE MENSAGENS ------------- //
-    //CLIENT 2.0 - funcionamento: 
-    // - passa uma mensagem definida aqui no codigo para o servidor como a struct [request_msg]
-    // - depois espera uma resposta do servidor e imprime na tela
-    // - encerra o programa
     
     // --- BUFFER --- // 
     //Buffer que vai guardar o conteudo recebido do teclado
     char buf[BUFSZ];
     memset(buf, 0, BUFSZ);
+	fgets(buf, BUFSZ-1, stdin);
 
     // --- CRIACAO DA MENSAGEM (request) --- // 
     struct request_msg *msg = malloc(MSGSZ); //guarda a msg
@@ -93,9 +116,7 @@ int main(int argc, char **argv){
     //[ERRO] - To enviando ponteiros pro meu servidor, com o tipo e os valores da msg, isso nao da certo porque os poteiros tao
     //no lado da memoria do lado do cliente, e quando passa pro lado do servidor da ruim. Tava dando certo quando era soh tipos inteiros 
     //a solucao vai ser transformar a request_msg em string pra transmitir pro servidor
-    // --- ENVIO DA MENSAGEM (request) --- // 
-    //Envia a mensagem pro socket em formato de [request_msg], retorna o numero de bytes enviado
-    //O segundo argumento de send eh um const void *, que recebe tipos quaisquer, mas tem que ser castado pra ser lido
+    // --- ENVIO DA MENSAGEM --- // 
 
     // --- DEESTRUICAO DA MENSAGEM ---//
     free(msg); //desaloca o espaco da msg
