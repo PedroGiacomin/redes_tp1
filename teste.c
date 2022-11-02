@@ -219,8 +219,10 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, "INS_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
-        if(!atoi(token))
-            return 0; //teste se o valor eh um inteiro
+        if(strcmp(token, "0") && !atoi(token))
+            return 0; 
+            //primeiro testa se o valor eh 0, se nao for, testa se eh um inteiro (esse problema surge porque atoi
+            //retorna 0 se o valor nao for um inteiro, mas nao faz distincao entre o que eh um int 0 e um nao int)
 
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
@@ -231,22 +233,23 @@ unsigned process_command(char *comando, char *msg_out){
             return 0;
         
         token = strtok(NULL, ": "); //token = locId:
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
         token = strtok(NULL, " "); //token = value1
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
         token = strtok(NULL, " "); //token = value2
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token)){
             return 0;
+        }
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
@@ -262,7 +265,7 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, "REM_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0; //teste se o valor eh um inteiro
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
@@ -273,7 +276,7 @@ unsigned process_command(char *comando, char *msg_out){
             return 0;
         
         token = strtok(NULL, " "); //token = locId:
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
@@ -288,7 +291,7 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, "CH_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0; //teste se o valor eh um inteiro
 
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
@@ -300,21 +303,21 @@ unsigned process_command(char *comando, char *msg_out){
             return 0;
         
         token = strtok(NULL, ": "); //token = locId:
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
         token = strtok(NULL, " "); //token = value1
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
         token = strtok(NULL, " "); //token = value2
-        if(!atoi(token))
+        if(strcmp(token, "0") && !atoi(token))
             return 0;
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
@@ -327,15 +330,56 @@ unsigned process_command(char *comando, char *msg_out){
     }
 
     else if(!strcmp(token, "show")){
-        token = strtok(NULL, " "); //nesse caso, a proxima palavra do comando tem que ser state
-        if(!strcmp(token, "state")){
-            //ta certo ate aqui
+        //nesse caso, a proxima palavra do comando tem que ser state
+        token = strtok(NULL, " "); // token = state
+        if(strcmp(token, "state")){
+            return 0;
+        }
+
+        token = strtok(NULL, " "); // token = in || <devId>
+        if(!strcmp(token, "in")){
+            //nesse caso eh uma LOC_REQ
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("LOC_REQ"));
+            strcat(msg_out, "LOC_REQ");
+
+            token = strtok(NULL, " "); //token = locId
+            if(strcmp(token, "0") && !atoi(token))
+                return 0; //teste se o valor eh um inteiro
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+            strcat(msg_out, " ");
+            strcat(msg_out, token);
+
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+            strcat(msg_out, "\n");
+        }
+        else if(!strcmp(token, "0") || atoi(token)){
+            //nesse caso eh uma DEV_REQ
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_REQ"));
+            strcat(msg_out, "DEV_REQ");
+
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+            strcat(msg_out, " ");
+            strcat(msg_out, token);
+
+            token = strtok(NULL, " "); //token = in
+            if(strcmp(token, "in"))
+                return 0;
+        
+            token = strtok(NULL, " "); //token = locId
+            if(strcmp(token, "0") && !atoi(token))
+                return 0; //teste se o valor eh um inteiro
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+            strcat(msg_out, " ");
+            strcat(msg_out, token);
+
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+            strcat(msg_out, "\n");
         }
         else{
-            //tem erro
+            return 0;
         }
     }
-        
+
     else{
         return 0;
     }
@@ -349,9 +393,11 @@ int main(){
 
     // --- BUFFER --- // 
     //Buffer que vai guardar o conteudo recebido do teclado
-    char buf[BUFSZ];
+    char *buf = malloc(BUFSZ);
+
     memset(buf, 0, BUFSZ);
 	fgets(buf, BUFSZ-1, stdin);
+    buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
 
     char *msg_buf = malloc(0);
     printf("ACERTO = %d\n", process_command(buf, msg_buf));
