@@ -179,10 +179,20 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
                 build_error_msg(msg_out, 3); 
                 return;
             }
+
+            //Testa se o dispositivo estah instalado no local
+            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
+                build_error_msg(msg_out, 1);
+                return;
+            }
+            else{
+                //se estiver instalado, retorna o estado numa req 
+                //Envia msg de resposta DEV_RES
+            }
             break;
 
         case LOC_REQ:
-
+            
             break;
         
         default:
