@@ -31,13 +31,6 @@ struct request_msg{
     int *dev_state;
 };
 
-//Estrutura que guarda uma mensagem de controle (erro ou sucesso)
-// enum control_msg_type{INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ};
-// struct control_msg{
-//     char *type;
-//     unsigned code;
-// };
-
 //Funcao pra inicializar mensagem de requisicao (cliente -> servidor)
 void build_request_msg(struct request_msg *msg_out,char *tipo, int loc, int dev, int *state_vec){
     msg_out->type = tipo;
@@ -83,12 +76,21 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     free(values_aux);
 }
 
+//Funcao pra inicializar mensagem de reqres(nao sei se vou manter essa funcao)
+void build_reqres_msg(struct reqres_msg *msg_out, char *tipo, int *info_vec){
+    msg_out->type = tipo;
+    msg_out->info = info_vec;
+
+    printf("[log] Request_msg built\n");
+}
+
 // Transforma uma [reqres_msg] em uma [string] no formato TYPE INFO[0] INFO[1] ...
 // Aloca a string da mensagem final dinamicamente
 void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
 
     //comeca a construir a string pelo tipo
-    realloc(str_out, strlen(msg_in->type));
+    //o reallloc pode mandar pra uma posicao nova, mas retorna o ponteiro para a nova memoria alocada
+    str_out = realloc(str_out, strlen(msg_in->type));
     strcat(str_out, msg_in->type); 
 
     //parse int[] -> string
@@ -96,16 +98,15 @@ void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
     for(int i = 0; i < sizeof(msg_in->info)/sizeof(int); i++){
         char *aux = malloc(STR_MIN);
         sprintf(aux, " %d", msg_in->info[i]); //parse int -> str
-        realloc(str_out, strlen(aux));
+        str_out = realloc(str_out, strlen(aux));
         strcat(str_out, aux); 
         free(aux);
     }
 
     //as mensagens devem terminar em \n
-    realloc(str_out, strlen("\n"));
+    str_out = realloc(str_out, strlen("\n"));
     strcat(str_out, "\n"); 
 }
-
 
 // Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
 // O vetor tem de valores tem de ser alocado dinamicamente e depois desalocado

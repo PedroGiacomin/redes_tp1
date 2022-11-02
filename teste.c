@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#define BUFSZ 500
 #define MSGSZ 500
 #define MAX_STATE_VALUES 2
 #define STR_MIN 8
@@ -152,7 +153,7 @@ struct reqres_msg{
     int *info;
 };
 
-//Funcao pra inicializar mensagem de reqres (cliente -> servidor)
+//Funcao pra inicializar mensagem de reqres(nao sei se vou manter essa funcao)
 void build_reqres_msg(struct reqres_msg *msg_out, char *tipo, int *info_vec){
     msg_out->type = tipo;
     msg_out->info = info_vec;
@@ -168,12 +169,13 @@ void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
     //o reallloc pode mandar pra uma posicao nova, mas retorna o ponteiro para a nova memoria alocada
     str_out = realloc(str_out, strlen(msg_in->type));
     strcat(str_out, msg_in->type); 
-
+    
     //parse int[] -> string
-    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
+    //sizeof(msg_in->info/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
     for(int i = 0; i < sizeof(msg_in->info)/sizeof(int); i++){
         char *aux = malloc(STR_MIN);
         sprintf(aux, " %d", msg_in->info[i]); //parse int -> str
+        printf("aux> %s\n", aux);
         str_out = realloc(str_out, strlen(aux));
         strcat(str_out, aux); 
         free(aux);
@@ -184,20 +186,179 @@ void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
     strcat(str_out, "\n"); 
 }
 
+// --- LOGICA DA INTERFACE --- //
+// - A interface do cliente vai pegar um COMANDO do teclado e transformar numa mensagem de requisicao, segundo:
+//  <devId>, <locId> e <valuei> sao int 
+//  MENSAGEM     COMANDO      
+//  INS_REQ      install <devId> in <locId>: <value1> <value2>
+//  REM_REQ      remove <devId> in <locId>    
+//  CH_REQ       change <devId> in <locId>: <value1> <value2>
+//  DEV_REQ      show state <devId> in <locId>
+//  LOC_REQ      show state in <locId>
+// - Percebe-se que todos os comandos tem uma identificacao inicial: install, remove, change ou show.
+// - Precisara ser feita uma funcao que interpreta o comando de uma forma diferente para cada identificacao inicial.
+// - No caso do show, ainda, eh necessario uma condicional para saber se eh uma consulta de device ou de local.
+// - Todas as palavras do comando devem ser testadas, pois um comando invalido gera uma desconexao do servidor
+
+
+// A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
+// Na primeira chamada passamos a string a ser cortada e depois passamos NULL
+// retorna 0 se tiver algum erro, 1 se tiver tudo bem
+// testa por erros em todas as etapas. 
+// Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao certas, testa se strcmp != 0
+
+// Transformar um comando em uma string no formato pornto pra enviar pro servidor
+// A string que vai ser enviada eh alocada dinamicamente
+unsigned process_command(char *comando, char *msg_out){
+    
+    //token guarda a palavra do comando que estah sendo processada no momento, sempre entre " "
+    //Inicialmente, token tem a primeira palavra do comando, que eh a "identificacao" dele
+    char *token = strtok(comando, " ");
+    if(!strcmp(token, "install")){
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("INS_REQ"));
+        strcat(msg_out, "INS_REQ"); 
+
+        token = strtok(NULL, " "); //token = devId
+        if(!atoi(token))
+            return 0; //teste se o valor eh um inteiro
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = in
+        if(strcmp(token, "in"))
+            return 0;
+        
+        token = strtok(NULL, ": "); //token = locId:
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = value1
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = value2
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+        strcat(msg_out, "\n");
+
+        //soh suporta dispositivos com 2 valores 
+    }
+    
+    else if(!strcmp(token, "remove")){
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("REM_REQ"));
+        strcat(msg_out, "REM_REQ"); 
+
+        token = strtok(NULL, " "); //token = devId
+        if(!atoi(token))
+            return 0; //teste se o valor eh um inteiro
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = in
+        if(strcmp(token, "in"))
+            return 0;
+        
+        token = strtok(NULL, " "); //token = locId:
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+        strcat(msg_out, "\n");
+    }
+
+    else if(!strcmp(token, "change")){
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("CH_REQ"));
+        strcat(msg_out, "CH_REQ"); 
+
+        token = strtok(NULL, " "); //token = devId
+        if(!atoi(token))
+            return 0; //teste se o valor eh um inteiro
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = in
+        if(strcmp(token, "in"))
+            return 0;
+        
+        token = strtok(NULL, ": "); //token = locId:
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = value1
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        token = strtok(NULL, " "); //token = value2
+        if(!atoi(token))
+            return 0;
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        strcat(msg_out, " ");
+        strcat(msg_out, token);
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+        strcat(msg_out, "\n");
+
+        //soh suporta dispositivos com 2 valores 
+    }
+
+    else if(!strcmp(token, "show")){
+        token = strtok(NULL, " "); //nesse caso, a proxima palavra do comando tem que ser state
+        if(!strcmp(token, "state")){
+            //ta certo ate aqui
+        }
+        else{
+            //tem erro
+        }
+    }
+        
+    else{
+        return 0;
+    }
+
+    return 1;
+}
 
 int main(){
     // --- TESTES --- // 
     printf("Teste do reqres_msg2string\n");
 
-    char *tipo = "INS_REQ";
-    int vec_aux[2] = {1, 2};
+    // --- BUFFER --- // 
+    //Buffer que vai guardar o conteudo recebido do teclado
+    char buf[BUFSZ];
+    memset(buf, 0, BUFSZ);
+	fgets(buf, BUFSZ-1, stdin);
 
-    struct reqres_msg *msg_teste = malloc(MSGSZ);
-    build_reqres_msg(msg_teste, tipo, vec_aux);
+    char *msg_buf = malloc(0);
+    printf("ACERTO = %d\n", process_command(buf, msg_buf));
 
-    char *str_out = malloc(0);
-    reqres_msg2string(str_out, msg_teste);
-    printf("%s\n", str_out);
-    
+    puts(msg_buf);
+
+    free(msg_buf);
+
     return 0;
 }

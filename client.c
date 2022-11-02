@@ -21,6 +21,11 @@ void usage(){
     exit(EXIT_FAILURE);
 }
 
+//Transformar um comando em uma [reqres_msg], pra depois transformar essa [reqres_msg] em [string] para mandar pro servidor
+void process_command(char *comando, struct reqres_msg *msg_out){
+
+}
+
 // --- LOGICA DA INTERFACE --- //
 // - A interface do cliente vai pegar um COMANDO do teclado e transformar numa mensagem de requisicao, segundo:
 //  <devId>, <locId> e <valuei> sao int 
