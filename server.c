@@ -28,7 +28,7 @@ struct dispositivo{
 //Cada local tem no maximo 5 dispositivos
 struct local{
     unsigned id;
-    struct dispositivo dispositivos[5];
+    struct dispositivo dispositivos[6];
 };
 
 //Funcoes pra construir mensagens de controle ERROR e OK jah em formato de string, fornecendo apenas o codigo
@@ -57,10 +57,6 @@ void build_ok_msg(char *msg_out, unsigned codigo){
     free(code_aux);
 }
 
-//Funcoes para construir mensagem de resposta DEV_RES e LOC_RES
-void build_res_msg(char *msg_out){
-
-}
 //Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0
 unsigned is_dev_id_valid(int dev_id){
     if(dev_id >= 1 && dev_id <= 5){
@@ -72,7 +68,6 @@ unsigned is_dev_id_valid(int dev_id){
 //Tive que fazer duas funcoes porque nao era possivel acessar o request_type por dentro da request_msg, assim tambem foi possivel usar switch case
 enum REQ_TYPE {INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ};
 unsigned parse_req_type(const char *req_type_in){
-    puts(req_type_in);
     if(!strcmp(req_type_in, "INS_REQ"))
         return INS_REQ;
     else if (!strcmp(req_type_in, "REM_REQ"))
@@ -93,7 +88,7 @@ unsigned parse_req_type(const char *req_type_in){
 // [ERRO] - Tive problema ao passar o database por referencia para a funcao process_request, mas deu certo usando esses colchetes
 
 // --- LOGICA DO DB --- //
-// - O banco de dados do servidor eh simplesmente um vetor de struct local com 5 posicoes. 
+// - O banco de dados do servidor eh simplesmente um vetor de 'struct local' com 5 posicoes. 
 // - A posicao i do vetor eh resrevada ao local de id i, segundo TABELA 2: 
 //      ID     LOCAL
 //      1      quarto
@@ -112,6 +107,7 @@ unsigned parse_req_type(const char *req_type_in){
 //      5      camera
 // - O valor default das posicoes do vetor de dispositivos eh 0, assim, se o dispositivo na posicao j do vetor eh 0, significa
 // que o dispositivo de ID j nao estah instalado naquele local
+// - As posicoes 0 nao sao utilizadas
 
 //A ideia eh que cada dispositivo sera instalado na posicao do vetor de seu respectivo dev_id
 void process_request(struct request_msg *msg, unsigned req_type,  struct local locais[], char *msg_out){
@@ -184,7 +180,7 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
             }
 
             //Testa se o dispositivo estah instalado no local
-            printf("locais[msg->local_id].dispositivos[msg->dev_id].id> %d\n", locais[msg->local_id].dispositivos[msg->dev_id].id);
+            printf("locais[%d].dispositivos[%d].id> %d\n", msg->local_id, msg->dev_id, locais[msg->local_id].dispositivos[msg->dev_id].id);
             if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
                 build_error_msg(msg_out, 1);
                 return;
@@ -199,7 +195,7 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
 
                 //Consulta o DB e insere as infos na string da msg de resposta 
                 sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].ligado);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
+                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux)); 
                 
                 sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].dado);
                 msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
@@ -234,6 +230,8 @@ int main(int argc, char **argv){
         database[i].id = i;
         for(int j = 1; j <= MAX_LOCAIS; j++){
             database[i].dispositivos[j].id = 0;
+            database[i].dispositivos[j].dado = 0;
+            database[i].dispositivos[j].ligado = 0;
         }
     }
     
@@ -241,12 +239,12 @@ int main(int argc, char **argv){
     database[5].dispositivos[3].ligado = 1;
     database[5].dispositivos[3].dado = 40;
     
-    // for(int i = 1; i <= MAX_LOCAIS; i++){
-    //     printf("loc> %d\n", database[i].id);
-    //     for(int j = 1; j <= MAX_LOCAIS; j++){
-    //         printf("\tdev> %d\n", database[i].dispositivos[j].id);
-    //     }
-    // }
+    for(int i = 1; i <= MAX_LOCAIS; i++){
+        printf("loc> %d\n", database[i].id);
+        for(int j = 1; j <= MAX_LOCAIS; j++){
+            printf("\tdev> %d \ton> %d \tdata> %d\n", database[i].dispositivos[j].id, database[i].dispositivos[j].ligado, database[i].dispositivos[j].dado);
+        }
+    }
     
     // ------------- CONEXAO COM CLIENTE ------------- //
     // --- DEFINICAO DE v4|v6 E PORTA --- //
@@ -314,19 +312,19 @@ int main(int argc, char **argv){
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
         //Recebe msg em formato de [string] e salva no msg_buf
-        char msg_buf[BUFSZ];
+        char msg_buf[MSGSZ];
         memset(msg_buf, 0, BUFSZ);
         size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
         printf("%s", msg_buf); //Imprime a msg na tela
-    
+        
         //Transforma a mensagem em [request_msg] e guarda em msg_recebida
         struct request_msg *msg_recebida = malloc(MSGSZ);
         string2msg(msg_buf, msg_recebida);
 
-        //Processa a mensagem e guarda a mensagem de controle de resposta ao cliente em msg_buf
+        //Processa a mensagem e guarda a mensagem d resposta ao cliente em msg_buf
         unsigned req_type = parse_req_type(msg_recebida->type);
-        memset(msg_buf, 0, BUFSZ);
-        process_request(msg_recebida, req_type, database, msg_buf);
+        char *msg_out = malloc(0);
+        process_request(msg_recebida, req_type, database, msg_out);
 
         //Desaloca a mensagem recebida do cliente
         free(msg_recebida);

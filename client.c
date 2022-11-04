@@ -55,6 +55,7 @@ unsigned process_command(char *comando, char *msg_out){
     // retorna 0 se tiver algum erro, 1 se tiver tudo bem
     // testa erros em todas as etapas
     // Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao erradas, testa se strcmp != 0
+    // No comando, o dev_id vem antes do loc_id, mas na mensagem vem o loc_id antes do dev_id. Entao tem que inverter a ordem ao converter.
 
     //Inicialmente, token tem a primeira palavra do comando, que eh a "identificacao" dele
     char *token = strtok(comando, " ");
@@ -68,20 +69,24 @@ unsigned process_command(char *comando, char *msg_out){
             //primeiro testa se o valor eh 0, se nao for, testa se eh um inteiro (esse problema surge porque atoi
             //retorna 0 se o valor nao for um inteiro, mas nao faz distincao entre o que eh um int 0 e um nao int)
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
-        strcat(msg_out, " ");
-        strcat(msg_out, token);
+        char *hold = malloc(strlen(token));
+        strcpy(hold, token);   //guarda o token = devId
 
         token = strtok(NULL, " "); //token = in
         if(strcmp(token, "in"))
             return 0;
-        
+
         token = strtok(NULL, ": "); //token = locId:
         if(strcmp(token, "0") && !atoi(token))
             return 0;
+
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
+        strcat(msg_out, " ");
+        strcat(msg_out, hold);  //insere o devId depois do locId
 
         token = strtok(NULL, " "); //token = value1
         if(strcmp(token, "0") && !atoi(token))
@@ -101,6 +106,8 @@ unsigned process_command(char *comando, char *msg_out){
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
         strcat(msg_out, "\n");
 
+        free(hold);
+
         //soh suporta dispositivos com 2 valores 
     }
     
@@ -111,9 +118,9 @@ unsigned process_command(char *comando, char *msg_out){
         token = strtok(NULL, " "); //token = devId
         if(strcmp(token, "0") && !atoi(token))
             return 0; //teste se o valor eh um inteiro
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
-        strcat(msg_out, " ");
-        strcat(msg_out, token);
+        
+        char *hold = malloc(strlen(token));
+        strcpy(hold, token);   //guarda o token = devId
 
         token = strtok(NULL, " "); //token = in
         if(strcmp(token, "in"))
@@ -126,8 +133,14 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
+        strcat(msg_out, " ");
+        strcat(msg_out, hold);  //insere o devId depois do locId
+        
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
         strcat(msg_out, "\n");
+
+        free(hold);
     }
 
     else if(!strcmp(token, "change")){
@@ -138,9 +151,8 @@ unsigned process_command(char *comando, char *msg_out){
         if(strcmp(token, "0") && !atoi(token))
             return 0; //teste se o valor eh um inteiro
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
-        strcat(msg_out, " ");
-        strcat(msg_out, token);
+        char *hold = malloc(strlen(token));
+        strcpy(hold, token);   //guarda o token = devId
 
         token = strtok(NULL, " "); //token = in
         if(strcmp(token, "in"))
@@ -152,6 +164,10 @@ unsigned process_command(char *comando, char *msg_out){
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
+
+        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
+        strcat(msg_out, " ");
+        strcat(msg_out, hold);  //insere o devId depois do locId
 
         token = strtok(NULL, " "); //token = value1
         if(strcmp(token, "0") && !atoi(token))
@@ -171,6 +187,7 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, "\n");
 
         //soh suporta dispositivos com 2 valores 
+        free(hold);
     }
 
     else if(!strcmp(token, "show")){
@@ -196,19 +213,20 @@ unsigned process_command(char *comando, char *msg_out){
             msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
             strcat(msg_out, "\n");
         }
+        
         else if(!strcmp(token, "0") || atoi(token)){
             //nesse caso eh uma DEV_REQ
+            
             msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_REQ"));
             strcat(msg_out, "DEV_REQ");
 
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
-            strcat(msg_out, " ");
-            strcat(msg_out, token);
+            char *hold = malloc(strlen(token));
+            strcpy(hold, token);   //guarda o token = devId
 
             token = strtok(NULL, " "); //token = in
             if(strcmp(token, "in"))
                 return 0;
-        
+
             token = strtok(NULL, " "); //token = locId
             if(strcmp(token, "0") && !atoi(token))
                 return 0; //teste se o valor eh um inteiro
@@ -216,9 +234,16 @@ unsigned process_command(char *comando, char *msg_out){
             strcat(msg_out, " ");
             strcat(msg_out, token);
 
+            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
+            strcat(msg_out, " ");
+            strcat(msg_out, hold); //insere o devId depois do locId
+
             msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
             strcat(msg_out, "\n");
+
+            free(hold);
         }
+        
         else{
             return 0;
         }
@@ -228,6 +253,7 @@ unsigned process_command(char *comando, char *msg_out){
         return 0;
     }
 
+    //free(hold);
     return 1;
 }
 

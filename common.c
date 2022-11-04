@@ -77,14 +77,6 @@ void msg2string(char *str_out, struct request_msg *msg_in){
     free(values_aux);
 }
 
-//Funcao pra inicializar mensagem de reqres(nao sei se vou manter essa funcao)
-void build_reqres_msg(struct reqres_msg *msg_out, char *tipo, int *info_vec){
-    msg_out->type = tipo;
-    msg_out->info = info_vec;
-
-    printf("[log] Request_msg built\n");
-}
-
 // Transforma uma [reqres_msg] em uma [string] no formato TYPE INFO[0] INFO[1] ...
 // Aloca a string da mensagem final dinamicamente
 void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
