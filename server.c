@@ -12,6 +12,10 @@
 #define MSGSZ 1024
 #define MAX_LOCAIS 5
 #define STR_MIN 8
+#define MIN_DEV_ID 1
+#define MAX_DEV_ID 5
+#define MIN_LOC_ID 1
+#define MAX_LOC_ID 5
 
 void usage(){
     printf("Chamada correta: ./server <v4/v6> <port>\n");
@@ -57,9 +61,17 @@ void build_ok_msg(char *msg_out, unsigned codigo){
     free(code_aux);
 }
 
-//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0
+//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0 
 unsigned is_dev_id_valid(int dev_id){
-    if(dev_id >= 1 && dev_id <= 5){
+    if(dev_id >= MIN_DEV_ID && dev_id <= MAX_DEV_ID){
+        return 1;
+    }
+    return 0;
+}
+
+//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0 (por boa pratica)
+unsigned is_loc_id_valid(int loc_id){
+    if(loc_id >= MIN_LOC_ID && loc_id <= MAX_LOC_ID){
         return 1;
     }
     return 0;
@@ -89,22 +101,22 @@ unsigned parse_req_type(const char *req_type_in){
 
 // --- LOGICA DO DB --- //
 // - O banco de dados do servidor eh simplesmente um vetor de 'struct local' com 5 posicoes. 
-// - A posicao i do vetor eh resrevada ao local de id i, segundo TABELA 2: 
-//      ID     LOCAL
-//      1      quarto
-//      2      suite
-//      3      sala
-//      4      cozinha
-//      5      banheiro
+// - A posicao i do vetor eh resrevada ao local de id i + 1, segundo TABELA 2: 
+//      ID     LOCAL    i
+//      1      quarto   0
+//      2      suite    1 
+//      3      sala     2
+//      4      cozinha  3
+//      5      banheiro 4
 // 
 // - Cada local tem em sua estrutura um vetor de 5 dispositivos
-// - A posicao j do vetor eh reservada ao dispositivo de ID j, segundo TABELA 1:
-//      ID     DISPOSITIVO
-//      1      AC
-//      2      TV
-//      3      lampada
-//      4      porta
-//      5      camera
+// - A posicao j do vetor eh reservada ao dispositivo de ID j + 1, segundo TABELA 1:
+//      ID     DISPOSITIVO  j
+//      1      AC           0
+//      2      TV           1
+//      3      lampada      2
+//      4      porta        3
+//      5      camera       4
 // - O valor default das posicoes do vetor de dispositivos eh 0, assim, se o dispositivo na posicao j do vetor eh 0, significa
 // que o dispositivo de ID j nao estah instalado naquele local
 // - As posicoes 0 nao sao utilizadas
@@ -214,6 +226,160 @@ void process_request(struct request_msg *msg, unsigned req_type,  struct local l
     }
 }
 
+void process_request2(char *request, struct local locais[], char *response){
+
+    char *token = strtok(request, " "); //token = type
+    unsigned req_type = parse_req_type(token);
+    int loc_id = 0;
+    int dev_id = 0;
+    int ligado = 0;
+    int dado = 0;
+
+    switch (req_type){
+        case INS_REQ:
+            // INS_REQ <locId> <devId> <ligado> <dado>
+            token = strtok(NULL, " "); //token = locId
+            loc_id = atoi(token);
+            token = strtok(NULL, " "); //token = devId
+            dev_id = atoi(token);
+            token = strtok(NULL, " "); //token = ligado
+            ligado = atoi(token);
+            token = strtok(NULL, " "); //token = dado
+            dado = atoi(token);
+
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(dev_id)){
+                build_error_msg(response, 3);
+                return;
+            }
+
+            //Instala o dispositivo 
+            locais[loc_id - 1].dispositivos[dev_id - 1].id = dev_id;
+            locais[loc_id - 1].dispositivos[dev_id - 1].ligado = ligado;
+            locais[loc_id - 1].dispositivos[dev_id - 1].dado = dado;
+
+            //Resposta de sucesso
+            build_ok_msg(response, 1); 
+        break;
+
+        case REM_REQ:
+            // REM_REQ <locId> <devId> 
+            token = strtok(NULL, " "); //token = locId
+            loc_id = atoi(token);
+            token = strtok(NULL, " "); //token = devId
+            dev_id = atoi(token);
+      
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(dev_id)){
+                build_error_msg(response, 3); 
+                return;
+            }
+
+            //testa se o dispositivo estah instalado, i.e., se o id do dispositivo na sua posicao correspondente eh != 0
+            if(locais[loc_id - 1].dispositivos[dev_id - 1].id == 0){
+                build_error_msg(response, 1);
+                return;
+            }
+            
+            //se estiver instalado, desinstala (zerando todos os seus atributos no vetor do DB)
+            locais[loc_id - 1].dispositivos[dev_id - 1].id = 0;
+            locais[loc_id - 1].dispositivos[dev_id - 1].ligado = 0;
+            locais[loc_id - 1].dispositivos[dev_id - 1].dado = 0;
+
+            //Resposta de sucesso
+            build_ok_msg(response, 2); 
+
+        break;
+
+        case CH_REQ:
+            // CH_REQ <locId> <devId> <ligado> <dado>
+            token = strtok(NULL, " "); //token = locId
+            loc_id = atoi(token);
+            token = strtok(NULL, " "); //token = devId
+            dev_id = atoi(token);
+            token = strtok(NULL, " "); //token = ligado
+            ligado = atoi(token);
+            token = strtok(NULL, " "); //token = dado
+            dado = atoi(token);
+
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(dev_id)){
+                build_error_msg(response, 3); 
+                return;
+            }
+            
+            //Testa se o dispositivo estah instalado no local
+            if(locais[loc_id - 1].dispositivos[dev_id - 1].id == 0){
+                build_error_msg(response, 1);
+                return;
+            }
+
+            //se estiver instalado, muda seu estado
+            locais[loc_id - 1].dispositivos[dev_id - 1].ligado = ligado;
+            locais[loc_id - 1].dispositivos[dev_id - 1].dado = dado;
+            
+            //resposta de sucesso
+            build_ok_msg(response, 3);
+            
+        break;
+
+        case DEV_REQ:
+            // DEV_REQ <locId> <devId> 
+            token = strtok(NULL, " "); //token = locId
+            loc_id = atoi(token);
+            token = strtok(NULL, " "); //token = devId
+            dev_id = atoi(token);
+
+            //Primeiro testa se o id do dispositivo eh invalido
+            if(!is_dev_id_valid(dev_id)){
+                build_error_msg(response, 3); 
+                return;
+            }
+
+            //Testa se o dispositivo estah instalado no local
+            if(locais[loc_id - 1].dispositivos[dev_id - 1].id == 0){
+                build_error_msg(response, 1);
+                return;
+            }
+
+            //Constroi a resposta com os dados como uma string dinamicamente
+            response = realloc(response, sizeof(response) + strlen("DEV_RES"));
+            strcat(response, "DEV_RES");
+
+            char *aux = malloc(STR_MIN);
+            //Consulta o DB e insere as infos na string da msg de resposta 
+            sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].ligado);
+            response = realloc(response, sizeof(response) + strlen(aux));
+            strcat(response, aux);
+            
+            sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].dado);
+            response = realloc(response, sizeof(response) + strlen(aux));
+            strcat(response, aux);
+            
+            free(aux);
+        break;
+
+        case LOC_REQ:
+            // LOC_REQ <locId>  
+            token = strtok(NULL, " "); //token = locId
+            loc_id = atoi(token);
+            
+            //Primeiro testa se o id do local eh invalido
+            if(!is_loc_id_valid(loc_id)){
+                build_error_msg(response, 4); 
+                return;
+            }
+
+            
+            
+        break;
+        
+        default:
+
+            break;
+    }
+}
+
 //argv[1] -> familia IP
 //argv[2] -> porta do processo
 int main(int argc, char **argv){
@@ -226,7 +392,7 @@ int main(int argc, char **argv){
     //cada local por padrao tem um vetor de 5 dispositivos
     struct local database[MAX_LOCAIS + 1];
     //inicializa o banco de dados com os ids 0
-    for(int i = 1; i <= MAX_LOCAIS; i++){
+    for(int i = 0; i <= MAX_LOCAIS; i++){
         database[i].id = i;
         for(int j = 1; j <= MAX_LOCAIS; j++){
             database[i].dispositivos[j].id = 0;

@@ -48,17 +48,18 @@ void usage(){
 // LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
 
 // Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor, alocada dinamicamente
-unsigned process_command(char *comando, char *msg_out){
-    
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
     // token guarda a palavra do comando que estah sendo processada no momento
     // retorna 0 se tiver algum erro, 1 se tiver tudo bem
     // testa erros em todas as etapas
     // Pra saber se os inteiros digitados estao certos, testa se atoi == 0. Pra saber se as palavras digitadas estao erradas, testa se strcmp != 0
     // No comando, o dev_id vem antes do loc_id, mas na mensagem vem o loc_id antes do dev_id. Entao tem que inverter a ordem ao converter.
-
+unsigned process_command(char *comando, char *msg_out){
+    
     //Inicialmente, token tem a primeira palavra do comando, que eh a "identificacao" dele
     char *token = strtok(comando, " ");
+    
+    //caso INS_REQ
     if(!strcmp(token, "install")){
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen("INS_REQ"));
         strcat(msg_out, "INS_REQ"); 
@@ -111,6 +112,7 @@ unsigned process_command(char *comando, char *msg_out){
         //soh suporta dispositivos com 2 valores 
     }
     
+    //caso REM_REQ
     else if(!strcmp(token, "remove")){
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen("REM_REQ"));
         strcat(msg_out, "REM_REQ"); 
@@ -143,6 +145,7 @@ unsigned process_command(char *comando, char *msg_out){
         free(hold);
     }
 
+    //caso CH_REQ
     else if(!strcmp(token, "change")){
         msg_out = realloc(msg_out, sizeof(msg_out) + strlen("CH_REQ"));
         strcat(msg_out, "CH_REQ"); 
@@ -190,6 +193,7 @@ unsigned process_command(char *comando, char *msg_out){
         free(hold);
     }
 
+    //caso LOC_REQ || DEV_REQ
     else if(!strcmp(token, "show")){
         //nesse caso, a proxima palavra do comando tem que ser state
         token = strtok(NULL, " "); // token = state
@@ -198,8 +202,9 @@ unsigned process_command(char *comando, char *msg_out){
         }
 
         token = strtok(NULL, " "); // token = in || <devId>
+        
+        //caso LOC_REQ
         if(!strcmp(token, "in")){
-            //nesse caso eh uma LOC_REQ
             msg_out = realloc(msg_out, sizeof(msg_out) + strlen("LOC_REQ"));
             strcat(msg_out, "LOC_REQ");
 
@@ -214,9 +219,8 @@ unsigned process_command(char *comando, char *msg_out){
             strcat(msg_out, "\n");
         }
         
-        else if(!strcmp(token, "0") || atoi(token)){
-            //nesse caso eh uma DEV_REQ
-            
+        //caso DEV_REQ
+        else if(!strcmp(token, "0") || atoi(token)){        
             msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_REQ"));
             strcat(msg_out, "DEV_REQ");
 
@@ -249,6 +253,7 @@ unsigned process_command(char *comando, char *msg_out){
         }
     }
 
+    //caso erro
     else{
         return 0;
     }
