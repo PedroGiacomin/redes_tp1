@@ -353,7 +353,7 @@ int main(int argc, char **argv){
 
     // Imprime a mensagem na tela
     printf("%u received bytes\n", total);
-    puts(buf);
+    printf("%s", buf);
 
     //Termina o programa
     exit(EXIT_SUCCESS);

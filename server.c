@@ -38,10 +38,11 @@ struct local{
 void build_error_msg(char *msg_out, unsigned codigo){
     
     //parse int->str
-    char *code_aux = malloc(sizeof(3));
+    char *code_aux = malloc(sizeof(STR_MIN));
     sprintf(code_aux, "%02u", codigo);
     
-    strcat(msg_out, "ERROR ");
+    msg_out = realloc(msg_out, strlen("ERROR") + strlen(code_aux) + strlen("\n"));
+    strcpy(msg_out, "ERROR ");
     strcat(msg_out, code_aux);
     strcat(msg_out, "\n");
 
@@ -50,10 +51,11 @@ void build_error_msg(char *msg_out, unsigned codigo){
 void build_ok_msg(char *msg_out, unsigned codigo){
     
     //parse int->str
-    char *code_aux = malloc(sizeof(3));
+    char *code_aux = malloc(sizeof(STR_MIN));
     sprintf(code_aux, "%02u", codigo);
     
-    strcat(msg_out, "OK ");
+    msg_out = realloc(msg_out, strlen("ERROR") + strlen(code_aux) + strlen("\n"));
+    strcpy(msg_out, "OK ");
     strcat(msg_out, code_aux);
     strcat(msg_out, "\n");
 
@@ -239,8 +241,8 @@ void process_request(char *request, struct local locais[], char *response){
 
             //Constroi a resposta com os dados como uma string dinamicamente
             //DEV_RES <ligado> <dado>  
-            response = realloc(response, sizeof(response) + strlen("DEV_RES"));
-            strcat(response, "DEV_RES");
+            response = realloc(response, strlen("DEV_RES"));
+            strcpy(response, "DEV_RES");
 
             char *aux = malloc(STR_MIN);
             //Consulta o DB e insere as infos na string da msg de resposta 
@@ -251,8 +253,12 @@ void process_request(char *request, struct local locais[], char *response){
             sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].dado);
             response = realloc(response, sizeof(response) + strlen(aux));
             strcat(response, aux);
+
+            response = realloc(response, sizeof(response) + strlen("\n"));
+            strcat(response, "\n");
             
             free(aux);
+            puts(response);
         break;
 
         case LOC_REQ:
@@ -260,24 +266,52 @@ void process_request(char *request, struct local locais[], char *response){
             token = strtok(NULL, " "); //token = locId
             loc_id = atoi(token);
             
+            response = realloc(response, strlen("LOC_RES"));
+            strcpy(response, "LOC_RES");
+
             //Primeiro testa se o id do local eh invalido
             if(!is_loc_id_valid(loc_id)){
                 build_error_msg(response, 4); 
                 return;
             }
             
+            char *aux2 = malloc(STR_MIN);
+            unsigned dev_count = 0;
             //Percorre todos os dispositivos do vetor
             for (int i = MIN_DEV_ID; i <= MAX_DEV_ID; i++){
-                
-            }
-            //Testa se nao tem nenhum instalado, se nao tiver, retorna erro 2
+                if(locais[loc_id - 1].dispositivos[i - 1].id != 0){
+                    //significa que o dispositivo i estah instalado, adiciona seus estados na LOC_RES
+                    sprintf(aux2, " %d", i);
+                    response = realloc(response, sizeof(response) + strlen(aux2));
+                    strcat(response, aux2);
 
-            //Envia a response msg 
+                    sprintf(aux2, " %d", locais[loc_id - 1].dispositivos[i - 1].ligado);
+                    response = realloc(response, sizeof(response) + strlen(aux2));
+                    strcat(response, aux2);
+
+                    sprintf(aux2, " %d", locais[loc_id - 1].dispositivos[i - 1].dado);
+                    response = realloc(response, sizeof(response) + strlen(aux2));
+                    strcat(response, aux2);
+
+                    response = realloc(response, sizeof(response) + strlen("\n"));
+                    strcat(response, "\n");
+
+                    dev_count++;
+                }
+            }
+            free(aux2);
+
+            //testa se nao tem nenhum dispositivo instalado
+            if(!dev_count){
+                build_error_msg(response, 2); 
+                return;
+            }
+
         break;
         
         default:
 
-            break;
+        break;
     }
 }
 
