@@ -16,123 +16,29 @@ void logexit(const char *msg){
 }
 
 // --- LÓGICA DAS MENSAGENS --- // 
-// - Toda mensagem de REQ ou RES possui uma string TYPE e um vetor de inteiros
-// - Cada inteiro em cada posicao significa um coisa diferente para cada tipo de mensagem, entao isso vai ter que ser taratado separadamente segundo tipo 
-
-struct reqres_msg{
-    char *type;
-    int *info;
-};
-
-//Estrutura que guarda uma mensagem de requisicao para o servidor
-struct request_msg{
-    char *type;
-    int local_id; 
-    int dev_id;
-    int *dev_state;
-};
-
-//Funcao pra inicializar mensagem de requisicao (cliente -> servidor)
-void build_request_msg(struct request_msg *msg_out,char *tipo, int loc, int dev, int *state_vec){
-    msg_out->type = tipo;
-    msg_out->dev_id = dev;
-    msg_out->local_id = loc;
-    msg_out->dev_state = state_vec;
-
-    printf("[log] Request_msg built\n");
-}
-
-// Transforma uma [request_msg] em uma [string] no formato TYPE LOC_ID DEV_ID VALUES 
-// Primeiro transforma cada parte da mensagem em string e depois concatena tudo 
-void msg2string(char *str_out, struct request_msg *msg_in){
-
-    //[ERRO] - Estava dando segmentation fault por que eu nao estava alocando memoria pras strings auxiliares, depois de usar malloc deu certo
-    //[ERRO] - Tava retornando uma string antes, mas nao tinha como desalocar a memoria da string de retorno [vide commit 1.0], entao eu passei a string como 
-    //parametro pra resolver, e aloquei localmente onde a string com a mensagem ia ser usada
-    
-    char *dev_id_aux = malloc(sizeof(msg_in->dev_id));
-    char *loc_id_aux = malloc(sizeof(msg_in->dev_id));
-    char *values_aux = malloc(sizeof(msg_in->dev_id));
-    
-    sprintf(dev_id_aux, " %d", msg_in->dev_id);
-    sprintf(loc_id_aux, " %d", msg_in->local_id);
-    
-    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
-    for(int i = 0; i < sizeof(msg_in->dev_state)/sizeof(int); i++){
-        char *aux = malloc(3);
-        sprintf(aux, " %d", msg_in->dev_state[i]);
-        strcat(values_aux, aux); 
-        free(aux);
-    }
-
-    //constroi a string completa
-    strcat(str_out, msg_in->type);
-    strcat(str_out, dev_id_aux);
-    strcat(str_out, loc_id_aux);
-    strcat(str_out, values_aux);
-
-    //desaloca variaveis auxiliares
-    free(dev_id_aux);
-    free(loc_id_aux);
-    free(values_aux);
-}
-
-// Transforma uma [reqres_msg] em uma [string] no formato TYPE INFO[0] INFO[1] ...
-// Aloca a string da mensagem final dinamicamente
-void reqres_msg2string(char *str_out, struct reqres_msg *msg_in){
-
-    //comeca a construir a string pelo tipo
-    //o reallloc pode mandar pra uma posicao nova, mas retorna o ponteiro para a nova memoria alocada
-    str_out = realloc(str_out, strlen(msg_in->type));
-    strcat(str_out, msg_in->type); 
-
-    //parse int[] -> string
-    //sizeof(msg_in->dev_state)/sizeof(int) eh a quantidade de elementos do vetor, que tem tamanho variavel
-    for(int i = 0; i < sizeof(msg_in->info)/sizeof(int); i++){
-        char *aux = malloc(STR_MIN);
-        sprintf(aux, " %d", msg_in->info[i]); //parse int -> str
-        str_out = realloc(str_out, strlen(aux));
-        strcat(str_out, aux); 
-        free(aux);
-    }
-
-    //as mensagens devem terminar em \n
-    str_out = realloc(str_out, strlen("\n"));
-    strcat(str_out, "\n"); 
-}
-
-// Transforma uma [string] no formato TYPE LOC_ID DEV_ID VALUES em uma [request_msg] 
-// O vetor tem de valores tem de ser alocado dinamicamente e depois desalocado
-void string2msg(char *str_in, struct request_msg *msg_out){
-
-    // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " ", e salva o pedaco atual na variavel token
-    // Na primeira chamada passamos a string a ser cortada e depois passamos NULL
-    char *token = strtok(str_in, " ");
-    msg_out->type = malloc(strlen(token));     //aloca espaco para a string tipo
-    msg_out->type = token;
-    
-    token = strtok(NULL, " ");
-    msg_out->local_id = atoi(token);   // pega o local_id, atoi eh uma funcao parse de string pra inteiro
-
-    token = strtok(NULL, " ");
-    msg_out->dev_id =  atoi(token);   // pega o dev_id
-
-    // loop pra pegar cada valor do vetor dev_state, que tem tamanho variavel, e construi-lo
-    int i = 0;
-    token = strtok(NULL, " ");
-    while(token != NULL){
-        msg_out->dev_state = realloc(msg_out->dev_state, i * sizeof(int));   //aloca memoria pro proximo elemento do vetor
-        msg_out->dev_state[i] = atoi(token);                //atribui valor ao proximo elemento do vetor
-
-        token = strtok(NULL, " ");              //corta a string novamente
-        i++;
-    }
-}
-
-void free_req_msg(struct request_msg *msg){
-    free(msg);
-    free(msg); //desaloca o vetor de valores
-    free(msg);
+//Funcao que pega uma string com o tipo da mensagem e devolve uma variavel do enum
+enum MSG_TYPE {INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ, DEV_RES, LOC_RES, ERROR, OK};
+unsigned parse_msg_type(const char *msg_type_in){
+    if(!strcmp(msg_type_in, "INS_REQ"))
+        return INS_REQ;
+    else if (!strcmp(msg_type_in, "REM_REQ"))
+        return REM_REQ;
+    else if (!strcmp(msg_type_in, "CH_REQ"))
+        return CH_REQ;
+    else if (!strcmp(msg_type_in, "DEV_REQ"))
+        return DEV_REQ;
+    else if (!strcmp(msg_type_in, "LOC_REQ"))
+        return LOC_REQ;
+    else if (!strcmp(msg_type_in, "DEV_RES"))
+        return DEV_RES;
+    else if (!strcmp(msg_type_in, "LOC_RES"))
+        return LOC_RES;
+    else if (!strcmp(msg_type_in, "ERROR"))
+        return ERROR;
+    else if (!strcmp(msg_type_in, "OK"))
+        return OK;
+    else 
+        return 0;
 }
 
 // --- DEFINICAO DE ENDERECOS --- // 

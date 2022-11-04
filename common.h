@@ -19,15 +19,5 @@ int server_sockaddr_init(const char *proto, const char *portstr,
                          struct sockaddr_storage *storage);
 
 // --- TRATAMENTO DE MENSAGENS --- //
-struct request_msg{
-    char *type;
-    int local_id; 
-    int dev_id;
-    int *dev_state; //vetor para guardar os valores
-};
-
-void build_request_msg(struct request_msg *msg_out, char *tipo, int loc, int dev, int *state_vec);
-
-void msg2string(char *str_out, struct request_msg *msg_in);
-
-void string2msg(char *str_in, struct request_msg *msg_out);
+enum MSG_TYPE {INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ, DEV_RES, LOC_RES, ERROR, OK};
+unsigned parse_msg_type(const char *msg_type_in);

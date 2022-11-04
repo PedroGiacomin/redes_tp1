@@ -11,6 +11,7 @@
 
 #define BUFSZ 1024
 #define MSGSZ 1024
+#define STR_MIN 8
 
 //Pra testes
 //Terminal 1: ./server v4 5151
@@ -108,7 +109,7 @@ unsigned process_command(char *comando, char *msg_out){
         strcat(msg_out, "\n");
 
         free(hold);
-
+        hold = NULL;
         //soh suporta dispositivos com 2 valores 
     }
     
@@ -262,7 +263,7 @@ unsigned process_command(char *comando, char *msg_out){
     return 1;
 }
 
-//  
+//
 void process_resmsg(char *msg_in, char *str_out){
 
 
@@ -312,32 +313,30 @@ int main(int argc, char **argv){
     printf("conectado a %s\n", addrstr);
 
     // ------------- TROCA DE MENSAGENS ------------- //
-    
-    // --- RECEBE O COMANDO --- // 
-    //Buffer que vai guardar o comando recebido do teclado
-    char *buf = malloc(BUFSZ);
-	fgets(buf, BUFSZ-1, stdin);
-    buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
-
-    // --- CONSTROI A MENSAGEM --- //
-    //process_command constroi a mensagem de requisicao em formato de string e a aloca dinamicamente. Retorna 0 se o comando tiver erro
-    char *msg_buf = malloc(0);
-    printf("ACERTO = %d\n", process_command(buf, msg_buf));
-
-    // --- ENVIA A MENSAGEM --- // 
-	size_t count = send(s, msg_buf, strlen(msg_buf)+1, 0); //envia como string
-	if (count != strlen(msg_buf)+1) {
-		logexit("send");
-	}
-
-    // --- LIBERA A MEMORIA ---//
-    free(buf);
-    free(msg_buf); //desaloca o espaco da msg
-
-    // --- RECEBE MENSAGEM DO SERVER (response) --- //
-    //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
     unsigned total = 0;
     while(1){
+        // --- RECEBE O COMANDO --- // 
+        //Buffer que vai guardar o comando recebido do teclado
+        char *buf = malloc(BUFSZ);
+        fgets(buf, BUFSZ-1, stdin);
+        buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
+
+        // --- RECEBE E CONSTROI A MENSAGEM --- //
+        //process_command constroi a mensagem de requisicao em formato de string e a aloca dinamicamente. Retorna 0 se o comando tiver erro
+        char *msg_buf = malloc(0);
+        if(!process_command(buf, msg_buf))
+            break;  //se receber mensagem com algum erro, sai do loop
+        if(!strcmp(msg_buf, "kill"))
+            break;  //se receber o comando kill, sai do loop
+
+        // --- ENVIA A MENSAGEM --- // 
+        size_t count = send(s, msg_buf, strlen(msg_buf)+1, 0); //envia como string
+        if (count != strlen(msg_buf)+1) {
+            logexit("send");
+        }
+
+        // --- RECEBE MENSAGEM DO SERVER (response) --- //
+        //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
         //O recv salva o que é recebido byte a byte o e retorna o numero de bytes recebido
         count = recv(s, buf + total, BUFSZ - total, 0);
         if(count == 0){
@@ -346,14 +345,19 @@ int main(int argc, char **argv){
         }
         //Desloca o buffer pra receber o proximo byte
         total += count;
+
+        // Imprime a mensagem na tela
+        printf("%u received bytes\n", total);
+        printf("%s", buf);
+        
+        // --- LIBERA A MEMORIA ---//
+        free(buf);
+        buf = NULL;
+        free(msg_buf); //desaloca o espaco da msg
+        msg_buf = NULL;
     }
-
-    //Fecha o socket ao receber a mensagem toda
+    //Ao sair do loop, fecha o socket e finaliza a conexao
     close(s);
-
-    // Imprime a mensagem na tela
-    printf("%u received bytes\n", total);
-    printf("%s", buf);
 
     //Termina o programa
     exit(EXIT_SUCCESS);

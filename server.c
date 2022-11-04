@@ -78,23 +78,6 @@ unsigned is_loc_id_valid(int loc_id){
     return 0;
 }
 
-//Tive que fazer duas funcoes porque nao era possivel acessar o request_type por dentro da request_msg, assim tambem foi possivel usar switch case
-enum REQ_TYPE {INS_REQ = 1, REM_REQ, CH_REQ, DEV_REQ, LOC_REQ};
-unsigned parse_req_type(const char *req_type_in){
-    if(!strcmp(req_type_in, "INS_REQ"))
-        return INS_REQ;
-    else if (!strcmp(req_type_in, "REM_REQ"))
-        return REM_REQ;
-    else if (!strcmp(req_type_in, "CH_REQ"))
-        return CH_REQ;
-    else if (!strcmp(req_type_in, "DEV_REQ"))
-        return DEV_REQ;
-    else if (!strcmp(req_type_in, "LOC_REQ"))
-        return LOC_REQ;
-    else 
-        return 0;
-}
-
 // [OBS - ANTES] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
 // [OBS - DEPOIS] - depois de fazer a funcao de parse deu pra usar switch case
 //Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle (OK ou ERROR) ou de RESPONSE para o cliente na variavel msg_out
@@ -126,7 +109,7 @@ unsigned parse_req_type(const char *req_type_in){
 void process_request(char *request, struct local locais[], char *response){
 
     char *token = strtok(request, " "); //token = type
-    unsigned req_type = parse_req_type(token);
+    unsigned req_type = parse_msg_type(token);
     int loc_id = 0;
     int dev_id = 0;
     int ligado = 0;
@@ -336,10 +319,6 @@ int main(int argc, char **argv){
         }
     }
     
-    database[4].dispositivos[2].id = 3;
-    database[4].dispositivos[2].ligado = 1;
-    database[4].dispositivos[2].dado = 40;
-    
     for(int i = MIN_LOC_ID - 1 ; i <= MAX_LOC_ID - 1; i++){
         printf("loc> %d\n", database[i].id);
         for(int j = MIN_DEV_ID - 1; j <= MAX_DEV_ID - 1; j++){
@@ -387,25 +366,24 @@ int main(int argc, char **argv){
     addrtostr(addr, addrstr, BUFSZ);
     printf("ouvindo na porta %s\n", addrstr);
 
-    // Aceita e trata conexoes eternamente
+    // --- ACEITAR CONEXAO DO CLIENTE --- //
+    struct sockaddr_storage cstorage;
+    struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
+    socklen_t caddrlen = sizeof(cstorage);
+
+    // A funcao accept aceita a conexao pelo socket s e cria OUTRO socket pra comunicar com o cliente 
+    // Recebe o socket de conexao, caddr pra salvar o endereco do cliente e caddrlen pro tamanho desse endereco
+    int client_sock = accept(s, caddr, &caddrlen);
+    if (client_sock == -1) {
+        logexit("erro ao conectar com o cliente");
+    }
+
+    // So transforma o endereco de sockaddr pra string
+    char caddrstr[BUFSZ];
+    addrtostr(caddr, caddrstr, BUFSZ);
+    printf("[log] connection from %s\n", caddrstr);
+
     while (1) {
-        // --- ACEITAR CONEXAO DO CLIENTE --- //
-        struct sockaddr_storage cstorage;
-        struct sockaddr *caddr = (struct sockaddr *)(&cstorage);
-        socklen_t caddrlen = sizeof(cstorage);
-
-        // A funcao accept aceita a conexao pelo socket s e cria OUTRO socket pra comunicar com o cliente 
-        // Recebe o socket de conexao, caddr pra salvar o endereco do cliente e caddrlen pro tamanho desse endereco
-        int client_sock = accept(s, caddr, &caddrlen);
-        if (client_sock == -1) {
-            logexit("erro ao conectar com o cliente");
-        }
-
-        // So transforma o endereco de sockaddr pra string
-        char caddrstr[BUFSZ];
-        addrtostr(caddr, caddrstr, BUFSZ);
-        printf("[log] connection from %s\n", caddrstr);
-
         // ------------- TROCA DE MENSAGENS ------------- //
         // --- BUFFER --- //
         char buf[BUFSZ];
@@ -416,6 +394,11 @@ int main(int argc, char **argv){
         char req_msg[MSGSZ];
         memset(req_msg, 0, BUFSZ);
         size_t count = recv(client_sock, req_msg, MSGSZ - 1, 0);
+        if(count == 0){
+            //Se nao receber nada, significa que a conexão foi fechada
+            close(client_sock); // Encerra a conexao com aquele cliente
+            break;
+        }
         printf("%s", req_msg); //Imprime a msg na tela
         
         //Processa a mensagem e guarda a mensagem de resposta ao cliente numa string
@@ -427,9 +410,6 @@ int main(int argc, char **argv){
         if (count != strlen(res_msg) + 1) {
             logexit("erro ao enviar mensagem de resposta");
         }
-
-        // Encerra a conexao com aquele cliente
-        close(client_sock);
     }
 
     exit(EXIT_SUCCESS);
