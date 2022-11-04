@@ -10,7 +10,6 @@
 
 #define BUFSZ 1024
 #define MSGSZ 1024
-#define MAX_LOCAIS 5
 #define STR_MIN 8
 #define MIN_DEV_ID 1
 #define MAX_DEV_ID 5
@@ -122,111 +121,7 @@ unsigned parse_req_type(const char *req_type_in){
 // - As posicoes 0 nao sao utilizadas
 
 //A ideia eh que cada dispositivo sera instalado na posicao do vetor de seu respectivo dev_id
-void process_request(struct request_msg *msg, unsigned req_type,  struct local locais[], char *msg_out){
-
-    switch (req_type){
-        case INS_REQ:
-            //Primeiro testa se o id do dispositivo eh invalido
-            if(!is_dev_id_valid(msg->dev_id)){
-                build_error_msg(msg_out, 3);
-                return;
-            }
-
-            locais[msg->local_id].dispositivos[msg->dev_id].id = msg->dev_id;
-            locais[msg->local_id].dispositivos[msg->dev_id].ligado = msg->dev_state[0];
-            locais[msg->local_id].dispositivos[msg->dev_id].dado = msg->dev_state[1];
-
-            build_ok_msg(msg_out, 1); //Envia OK 01
-        break;
-
-        case REM_REQ:
-            //Primeiro testa se o id do dispositivo eh invalido
-            if(!is_dev_id_valid(msg->dev_id)){
-                build_error_msg(msg_out, 3); 
-                return;
-            }
-
-            //testa se o dispositivo estah instalado, i.e., se o id do dispositivo na sua posicao correspondente eh 
-            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
-                build_error_msg(msg_out, 1);
-                return;
-            }
-            
-            //se estiver instalado, desinstala (zerando todos os seus atributos no vetor do DB)
-            locais[msg->local_id].dispositivos[msg->dev_id].id = 0;
-            locais[msg->local_id].dispositivos[msg->dev_id].ligado = 0;
-            locais[msg->local_id].dispositivos[msg->dev_id].dado = 0;
-
-            printf("removido\n");
-            build_ok_msg(msg_out, 2);
-
-            break;
-
-        case CH_REQ:
-            //Primeiro testa se o id do dispositivo eh invalido
-            if(!is_dev_id_valid(msg->dev_id)){
-                build_error_msg(msg_out, 3); 
-                return;
-            }
-            
-            //Testa se o dispositivo estah instalado no local
-            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
-                build_error_msg(msg_out, 1);
-                return;
-            }
-            else{
-                //se estiver instalado, muda seu estado
-                locais[msg->local_id].dispositivos[msg->dev_id].ligado = msg->dev_state[0];
-                locais[msg->local_id].dispositivos[msg->dev_id].dado = msg->dev_state[1];
-                build_ok_msg(msg_out, 3);
-            }
-
-            break;
-    
-
-        case DEV_REQ:
-            //Primeiro testa se o id do dispositivo eh invalido
-            if(!is_dev_id_valid(msg->dev_id)){
-                build_error_msg(msg_out, 3); 
-                return;
-            }
-
-            //Testa se o dispositivo estah instalado no local
-            printf("locais[%d].dispositivos[%d].id> %d\n", msg->local_id, msg->dev_id, locais[msg->local_id].dispositivos[msg->dev_id].id);
-            if(locais[msg->local_id].dispositivos[msg->dev_id].id == 0){
-                build_error_msg(msg_out, 1);
-                return;
-            }
-
-            else{
-                //Constroi a DEV_RES
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_RES"));
-                strcat(msg_out, "DEV_RES");
-
-                char *aux = malloc(STR_MIN);
-
-                //Consulta o DB e insere as infos na string da msg de resposta 
-                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].ligado);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux)); 
-                
-                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].dado);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
-                
-                free(aux);
-            }
-            break;
-
-        case LOC_REQ:
-            
-            break;
-        
-        default:
-
-            break;
-    }
-}
-
-void process_request2(char *request, struct local locais[], char *response){
+void process_request(char *request, struct local locais[], char *response){
 
     char *token = strtok(request, " "); //token = type
     unsigned req_type = parse_req_type(token);
@@ -343,6 +238,7 @@ void process_request2(char *request, struct local locais[], char *response){
             }
 
             //Constroi a resposta com os dados como uma string dinamicamente
+            //DEV_RES <ligado> <dado>  
             response = realloc(response, sizeof(response) + strlen("DEV_RES"));
             strcat(response, "DEV_RES");
 
@@ -369,9 +265,14 @@ void process_request2(char *request, struct local locais[], char *response){
                 build_error_msg(response, 4); 
                 return;
             }
+            
+            //Percorre todos os dispositivos do vetor
+            for (int i = MIN_DEV_ID; i <= MAX_DEV_ID; i++){
+                
+            }
+            //Testa se nao tem nenhum instalado, se nao tiver, retorna erro 2
 
-            
-            
+            //Envia a response msg 
         break;
         
         default:
@@ -390,24 +291,24 @@ int main(int argc, char **argv){
 
     // ------------- DB DO SERVER ------------- //
     //cada local por padrao tem um vetor de 5 dispositivos
-    struct local database[MAX_LOCAIS + 1];
+    struct local database[MAX_DEV_ID];
     //inicializa o banco de dados com os ids 0
-    for(int i = 0; i <= MAX_LOCAIS; i++){
-        database[i].id = i;
-        for(int j = 1; j <= MAX_LOCAIS; j++){
+    for(int i = MIN_LOC_ID - 1 ; i <= MAX_LOC_ID - 1; i++){
+        database[i].id = i + 1;
+        for(int j = MIN_DEV_ID - 1; j <= MAX_DEV_ID - 1; j++){
             database[i].dispositivos[j].id = 0;
             database[i].dispositivos[j].dado = 0;
             database[i].dispositivos[j].ligado = 0;
         }
     }
     
-    database[5].dispositivos[3].id = 3;
-    database[5].dispositivos[3].ligado = 1;
-    database[5].dispositivos[3].dado = 40;
+    database[4].dispositivos[2].id = 3;
+    database[4].dispositivos[2].ligado = 1;
+    database[4].dispositivos[2].dado = 40;
     
-    for(int i = 1; i <= MAX_LOCAIS; i++){
+    for(int i = MIN_LOC_ID - 1 ; i <= MAX_LOC_ID - 1; i++){
         printf("loc> %d\n", database[i].id);
-        for(int j = 1; j <= MAX_LOCAIS; j++){
+        for(int j = MIN_DEV_ID - 1; j <= MAX_DEV_ID - 1; j++){
             printf("\tdev> %d \ton> %d \tdata> %d\n", database[i].dispositivos[j].id, database[i].dispositivos[j].ligado, database[i].dispositivos[j].dado);
         }
     }
@@ -477,32 +378,19 @@ int main(int argc, char **argv){
         memset(buf, 0, BUFSZ);
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
-        //Recebe msg em formato de [string] e salva no msg_buf
-        char msg_buf[MSGSZ];
-        memset(msg_buf, 0, BUFSZ);
-        size_t count = recv(client_sock, msg_buf, MSGSZ - 1, 0);
-        printf("%s", msg_buf); //Imprime a msg na tela
+        //Recebe msg em formato de [string] e salva no numa string
+        char req_msg[MSGSZ];
+        memset(req_msg, 0, BUFSZ);
+        size_t count = recv(client_sock, req_msg, MSGSZ - 1, 0);
+        printf("%s", req_msg); //Imprime a msg na tela
         
-        //Transforma a mensagem em [request_msg] e guarda em msg_recebida
-        struct request_msg *msg_recebida = malloc(MSGSZ);
-        string2msg(msg_buf, msg_recebida);
-
-        //Processa a mensagem e guarda a mensagem d resposta ao cliente em msg_buf
-        unsigned req_type = parse_req_type(msg_recebida->type);
-        char *msg_out = malloc(0);
-        process_request(msg_recebida, req_type, database, msg_out);
-
-        //Desaloca a mensagem recebida do cliente
-        free(msg_recebida);
-
-        // --- CRIACAO DA MENSAGEM (response) --- //
-        //Salva o proprio endereco do cliente no buffer
-        //(num primeiro momento a mensagem eh so esse endereco)
-        sprintf(buf, "%.900s", msg_buf);
+        //Processa a mensagem e guarda a mensagem de resposta ao cliente numa string
+        char *res_msg = malloc(0);
+        process_request(req_msg, database, res_msg);
 
         // --- ENVIO DA MENSAGEM (response) --- //
-        count = send(client_sock, buf, strlen(buf) + 1, 0);
-        if (count != strlen(buf) + 1) {
+        count = send(client_sock, res_msg, strlen(res_msg) + 1, 0);
+        if (count != strlen(res_msg) + 1) {
             logexit("erro ao enviar mensagem de resposta");
         }
 
