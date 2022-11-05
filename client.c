@@ -249,9 +249,73 @@ unsigned process_command(char *comando, char *msg_out){
     return 1;
 }
 
-//
+//Transforma uma mensagem OK, ERROR, DEV_RES Ou LOC_RES em um aviso no terminal do cliente
 void process_resmsg(char *msg_in, char *str_out){
+    char *token = strtok(msg_in, " "); //token = type
+    int type = parse_msg_type(token);
+    unsigned code = 0;
 
+    switch (type){
+
+        case ERROR:
+            token = strtok(NULL, " "); //token = codigo do erro
+            code = atoi(token);
+
+            switch (code){
+                case 1:
+                    strcpy(str_out,"device not installed\n");
+                break;
+
+                case 2:
+                    strcpy(str_out,"no devices\n");
+                break;
+
+                case 3:
+                    strcpy(str_out,"invalid device\n");
+                break;
+
+                case 4:
+                    strcpy(str_out,"invalid local\n");
+                break;
+
+                default:
+                    
+                break;
+            }
+        break;
+
+        case OK:
+            token = strtok(NULL, " "); //token = codigo do erro
+            code = atoi(token);
+
+            switch (code){
+
+                case 1:
+                    strcpy(str_out,"successful installation\n");
+                break;
+
+                case 2:
+                    strcpy(str_out,"successful removal\n");
+                break;
+
+                case 3:
+                    strcpy(str_out,"successful change\n");
+                break;
+
+                default:
+                    
+                break;
+            }
+        break;
+
+        case DEV_RES:
+            token = strtok(msg_in, " "); //token = codigo do erro
+
+        break;
+        
+        default:
+            break;
+        }
 
 }
 
@@ -337,6 +401,11 @@ int main(int argc, char **argv){
 
         // Imprime a mensagem na tela
         printf("%s", buf_res);
+
+        char *warn = malloc(BUFSZ);
+        process_resmsg(buf_res, warn);
+        printf("%s", warn);
+
         
         // --- LIBERA A MEMORIA ---//
         free(buf);
@@ -345,6 +414,8 @@ int main(int argc, char **argv){
         msg_buf = NULL;
         free(buf_res);
         buf_res = NULL;
+        free(warn);
+        warn = NULL;
 
         total = 0;
     }

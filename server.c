@@ -9,7 +9,7 @@
 #include <sys/types.h>
 
 #define BUFSZ 1024
-#define MSGSZ 1024
+#define MSGSZ 500
 #define STR_MIN 8
 #define MIN_DEV_ID 1
 #define MAX_DEV_ID 5
