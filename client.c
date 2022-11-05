@@ -10,7 +10,7 @@
 #include "common.h"
 
 #define BUFSZ 1024
-#define MSGSZ 1024
+#define MSGSZ 500
 #define STR_MIN 8
 
 //Pra testes
@@ -48,7 +48,7 @@ void usage(){
 // DEV_RES      device <devId> in ComId: <valor1> <valor>
 // LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
 
-// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor, alocada dinamicamente
+// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
     // token guarda a palavra do comando que estah sendo processada no momento
     // retorna 0 se tiver algum erro, 1 se tiver tudo bem
@@ -62,8 +62,8 @@ unsigned process_command(char *comando, char *msg_out){
     
     //caso INS_REQ
     if(!strcmp(token, "install")){
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("INS_REQ"));
-        strcat(msg_out, "INS_REQ"); 
+        
+        strcpy(msg_out, "INS_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
         if(strcmp(token, "0") && !atoi(token))
@@ -71,7 +71,7 @@ unsigned process_command(char *comando, char *msg_out){
             //primeiro testa se o valor eh 0, se nao for, testa se eh um inteiro (esse problema surge porque atoi
             //retorna 0 se o valor nao for um inteiro, mas nao faz distincao entre o que eh um int 0 e um nao int)
 
-        char *hold = malloc(strlen(token));
+        char hold[BUFSZ];
         strcpy(hold, token);   //guarda o token = devId
 
         token = strtok(NULL, " "); //token = in
@@ -82,18 +82,16 @@ unsigned process_command(char *comando, char *msg_out){
         if(strcmp(token, "0") && !atoi(token))
             return 0;
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
         strcat(msg_out, " ");
         strcat(msg_out, hold);  //insere o devId depois do locId
 
         token = strtok(NULL, " "); //token = value1
         if(strcmp(token, "0") && !atoi(token))
             return 0;
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+       
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
@@ -101,21 +99,18 @@ unsigned process_command(char *comando, char *msg_out){
         if(strcmp(token, "0") && !atoi(token)){
             return 0;
         }
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+       
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
         strcat(msg_out, "\n");
 
-        free(hold);
-        hold = NULL;
         //soh suporta dispositivos com 2 valores 
     }
     
     //caso REM_REQ
     else if(!strcmp(token, "remove")){
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("REM_REQ"));
+    
         strcat(msg_out, "REM_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
@@ -132,15 +127,13 @@ unsigned process_command(char *comando, char *msg_out){
         token = strtok(NULL, " "); //token = locId:
         if(strcmp(token, "0") && !atoi(token))
             return 0;
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
         strcat(msg_out, " ");
         strcat(msg_out, hold);  //insere o devId depois do locId
-        
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
+    
         strcat(msg_out, "\n");
 
         free(hold);
@@ -148,7 +141,7 @@ unsigned process_command(char *comando, char *msg_out){
 
     //caso CH_REQ
     else if(!strcmp(token, "change")){
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("CH_REQ"));
+
         strcat(msg_out, "CH_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
@@ -165,29 +158,27 @@ unsigned process_command(char *comando, char *msg_out){
         token = strtok(NULL, ": "); //token = locId:
         if(strcmp(token, "0") && !atoi(token))
             return 0;
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
         strcat(msg_out, " ");
         strcat(msg_out, hold);  //insere o devId depois do locId
 
         token = strtok(NULL, " "); //token = value1
         if(strcmp(token, "0") && !atoi(token))
             return 0;
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+        
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
         token = strtok(NULL, " "); //token = value2
         if(strcmp(token, "0") && !atoi(token))
             return 0;
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+    
         strcat(msg_out, " ");
         strcat(msg_out, token);
 
-        msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
         strcat(msg_out, "\n");
 
         //soh suporta dispositivos com 2 valores 
@@ -206,23 +197,20 @@ unsigned process_command(char *comando, char *msg_out){
         
         //caso LOC_REQ
         if(!strcmp(token, "in")){
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("LOC_REQ"));
             strcat(msg_out, "LOC_REQ");
 
             token = strtok(NULL, " "); //token = locId
             if(strcmp(token, "0") && !atoi(token))
                 return 0; //teste se o valor eh um inteiro
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+            
             strcat(msg_out, " ");
             strcat(msg_out, token);
 
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
             strcat(msg_out, "\n");
         }
         
         //caso DEV_REQ
         else if(!strcmp(token, "0") || atoi(token)){        
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("DEV_REQ"));
             strcat(msg_out, "DEV_REQ");
 
             char *hold = malloc(strlen(token));
@@ -235,15 +223,13 @@ unsigned process_command(char *comando, char *msg_out){
             token = strtok(NULL, " "); //token = locId
             if(strcmp(token, "0") && !atoi(token))
                 return 0; //teste se o valor eh um inteiro
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(token));
+
             strcat(msg_out, " ");
             strcat(msg_out, token);
 
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen(hold));
             strcat(msg_out, " ");
             strcat(msg_out, hold); //insere o devId depois do locId
 
-            msg_out = realloc(msg_out, sizeof(msg_out) + strlen("\n"));
             strcat(msg_out, "\n");
 
             free(hold);
@@ -316,17 +302,19 @@ int main(int argc, char **argv){
     unsigned total = 0;
     while(1){
         // --- RECEBE O COMANDO --- // 
-        //Buffer que vai guardar o comando recebido do teclado
+        //buf vai guardar o comando recebido do teclado
         char *buf = malloc(BUFSZ);
+        memset(buf, 0, BUFSZ-1);
         fgets(buf, BUFSZ-1, stdin);
         buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
 
         // --- RECEBE E CONSTROI A MENSAGEM --- //
         //process_command constroi a mensagem de requisicao em formato de string e a aloca dinamicamente. Retorna 0 se o comando tiver erro
-        char *msg_buf = malloc(0);
+        //msg_buf guarda a mensagem que vai ser enviada ao server
+        char *msg_buf = malloc(MSGSZ);
         if(!process_command(buf, msg_buf))
             break;  //se receber mensagem com algum erro, sai do loop
-        if(!strcmp(msg_buf, "kill"))
+        if(!strcmp(buf, "kill"))
             break;  //se receber o comando kill, sai do loop
 
         // --- ENVIA A MENSAGEM --- // 
@@ -338,7 +326,8 @@ int main(int argc, char **argv){
         // --- RECEBE MENSAGEM DO SERVER (response) --- //
         //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
         //O recv salva o que é recebido byte a byte o e retorna o numero de bytes recebido
-        count = recv(s, buf + total, BUFSZ - total, 0);
+        char *buf_res = malloc(BUFSZ);
+        count = recv(s, buf_res + total, BUFSZ - total, 0);
         if(count == 0){
             //Se nao receber nada, significa que a conexão foi fechada
             break;
@@ -347,14 +336,17 @@ int main(int argc, char **argv){
         total += count;
 
         // Imprime a mensagem na tela
-        printf("%u received bytes\n", total);
-        printf("%s", buf);
+        printf("%s", buf_res);
         
         // --- LIBERA A MEMORIA ---//
         free(buf);
         buf = NULL;
         free(msg_buf); //desaloca o espaco da msg
         msg_buf = NULL;
+        free(buf_res);
+        buf_res = NULL;
+
+        total = 0;
     }
     //Ao sair do loop, fecha o socket e finaliza a conexao
     close(s);

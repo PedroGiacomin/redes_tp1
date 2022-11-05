@@ -319,13 +319,6 @@ int main(int argc, char **argv){
         }
     }
     
-    for(int i = MIN_LOC_ID - 1 ; i <= MAX_LOC_ID - 1; i++){
-        printf("loc> %d\n", database[i].id);
-        for(int j = MIN_DEV_ID - 1; j <= MAX_DEV_ID - 1; j++){
-            printf("\tdev> %d \ton> %d \tdata> %d\n", database[i].dispositivos[j].id, database[i].dispositivos[j].ligado, database[i].dispositivos[j].dado);
-        }
-    }
-    
     // ------------- CONEXAO COM CLIENTE ------------- //
     // --- DEFINICAO DE v4|v6 E PORTA --- //
     // Salva a familia IP e a porta na variavel storage que eh do tipo POSIX certo pra guardar endereco
