@@ -31,7 +31,7 @@ struct dispositivo{
 //Cada local tem no maximo 5 dispositivos
 struct local{
     unsigned id;
-    struct dispositivo dispositivos[6];
+    struct dispositivo dispositivos[5];
 };
 
 //Funcoes pra construir mensagens de controle ERROR e OK jah em formato de string, fornecendo apenas o codigo
@@ -70,7 +70,7 @@ unsigned is_dev_id_valid(int dev_id){
     return 0;
 }
 
-//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0 (por boa pratica)
+//Funcao pra testar se o dispositivo tem um id valido, retorna 1 ou 0 
 unsigned is_loc_id_valid(int loc_id){
     if(loc_id >= MIN_LOC_ID && loc_id <= MAX_LOC_ID){
         return 1;
@@ -105,7 +105,6 @@ unsigned is_loc_id_valid(int loc_id){
 // que o dispositivo de ID j nao estah instalado naquele local
 // - As posicoes 0 nao sao utilizadas
 
-//A ideia eh que cada dispositivo sera instalado na posicao do vetor de seu respectivo dev_id
 void process_request(char *request, struct local locais[], char *response){
 
     char *token = strtok(request, " "); //token = type
@@ -224,20 +223,20 @@ void process_request(char *request, struct local locais[], char *response){
 
             //Constroi a resposta com os dados como uma string dinamicamente
             //DEV_RES <ligado> <dado>  
-            response = realloc(response, strlen("DEV_RES"));
+            //response = realloc(response, strlen("DEV_RES"));
             strcpy(response, "DEV_RES");
 
             char *aux = malloc(STR_MIN);
             //Consulta o DB e insere as infos na string da msg de resposta 
             sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].ligado);
-            response = realloc(response, sizeof(response) + strlen(aux));
+            //response = realloc(response, sizeof(response) + strlen(aux));
             strcat(response, aux);
             
             sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].dado);
-            response = realloc(response, sizeof(response) + strlen(aux));
+            //response = realloc(response, sizeof(response) + strlen(aux));
             strcat(response, aux);
 
-            response = realloc(response, sizeof(response) + strlen("\n"));
+            //response = realloc(response, sizeof(response) + strlen("\n"));
             strcat(response, "\n");
             
             free(aux);
@@ -249,7 +248,6 @@ void process_request(char *request, struct local locais[], char *response){
             token = strtok(NULL, " "); //token = locId
             loc_id = atoi(token);
             
-            response = realloc(response, strlen("LOC_RES"));
             strcpy(response, "LOC_RES");
 
             //Primeiro testa se o id do local eh invalido
@@ -258,31 +256,25 @@ void process_request(char *request, struct local locais[], char *response){
                 return;
             }
             
-            char *aux2 = malloc(STR_MIN);
+            char aux2[STR_MIN];
             unsigned dev_count = 0;
             //Percorre todos os dispositivos do vetor
             for (int i = MIN_DEV_ID; i <= MAX_DEV_ID; i++){
                 if(locais[loc_id - 1].dispositivos[i - 1].id != 0){
                     //significa que o dispositivo i estah instalado, adiciona seus estados na LOC_RES
                     sprintf(aux2, " %d", i);
-                    response = realloc(response, sizeof(response) + strlen(aux2));
-                    strcat(response, aux2);
+                    strcat(response, aux2); // dev i
 
                     sprintf(aux2, " %d", locais[loc_id - 1].dispositivos[i - 1].ligado);
-                    response = realloc(response, sizeof(response) + strlen(aux2));
-                    strcat(response, aux2);
+                    strcat(response, aux2); // ligado/desligado
 
                     sprintf(aux2, " %d", locais[loc_id - 1].dispositivos[i - 1].dado);
-                    response = realloc(response, sizeof(response) + strlen(aux2));
-                    strcat(response, aux2);
-
-                    response = realloc(response, sizeof(response) + strlen("\n"));
-                    strcat(response, "\n");
+                    strcat(response, aux2); //dado
 
                     dev_count++;
                 }
             }
-            free(aux2);
+            strcat(response, "\n");
 
             //testa se nao tem nenhum dispositivo instalado
             if(!dev_count){
@@ -395,7 +387,7 @@ int main(int argc, char **argv){
         printf("%s", req_msg); //Imprime a msg na tela
         
         //Processa a mensagem e guarda a mensagem de resposta ao cliente numa string
-        char *res_msg = malloc(0);
+        char *res_msg = malloc(MSGSZ);
         process_request(req_msg, database, res_msg);
 
         // --- ENVIO DA MENSAGEM (response) --- //
@@ -403,6 +395,9 @@ int main(int argc, char **argv){
         if (count != strlen(res_msg) + 1) {
             logexit("erro ao enviar mensagem de resposta");
         }
+
+        free(res_msg);
+        res_msg = NULL;
     }
 
     exit(EXIT_SUCCESS);

@@ -13,10 +13,6 @@
 #define MSGSZ 500
 #define STR_MIN 8
 
-//Pra testes
-//Terminal 1: ./server v4 5151
-//Terminal 2: ./client 127.0.0.1 5151
-
 void usage(){
     printf("Chamada correta: ./client <server IP> <port>\n");
     exit(EXIT_FAILURE);
@@ -48,7 +44,7 @@ void usage(){
 // DEV_RES      device <devId> in ComId: <valor1> <valor>
 // LOC_RES      local <locId>: <devId> <valor1> <valor2> <devId2> <valor1> <valor2>
 
-// Transformar um comando em uma mensagem [string] no formato pronto pra enviar pro servidor
+// Transforma um comando em uma mensagem [string] no formato pronto pra enviar pro servidor
     // A funcao strtok eh usada pra cortar a string pedaco por pedaco de acordo com o " "
     // token guarda a palavra do comando que estah sendo processada no momento
     // retorna 0 se tiver algum erro, 1 se tiver tudo bem
@@ -186,6 +182,7 @@ unsigned process_command(char *comando, char *msg_out){
     }
 
     //caso LOC_REQ || DEV_REQ
+    //Para o cliente imprimir na tela a resposta a esses chamados, eles retornam 2.
     else if(!strcmp(token, "show")){
         //nesse caso, a proxima palavra do comando tem que ser state
         token = strtok(NULL, " "); // token = state
@@ -238,6 +235,8 @@ unsigned process_command(char *comando, char *msg_out){
         else{
             return 0;
         }
+
+        return 2;
     }
 
     //caso erro
@@ -245,12 +244,11 @@ unsigned process_command(char *comando, char *msg_out){
         return 0;
     }
 
-    //free(hold);
     return 1;
 }
 
-//Transforma uma mensagem OK, ERROR, DEV_RES Ou LOC_RES em um aviso no terminal do cliente
-void process_resmsg(char *msg_in, char *str_out){
+//Transforma uma mensagem OK, ERROR em um aviso no terminal do cliente
+void process_control_msg(char *msg_in, char *str_out){
     char *token = strtok(msg_in, " "); //token = type
     int type = parse_msg_type(token);
     unsigned code = 0;
@@ -308,11 +306,6 @@ void process_resmsg(char *msg_in, char *str_out){
             }
         break;
 
-        case DEV_RES:
-            token = strtok(msg_in, " "); //token = codigo do erro
-
-        break;
-        
         default:
             break;
         }
@@ -366,47 +359,42 @@ int main(int argc, char **argv){
     unsigned total = 0;
     while(1){
         // --- RECEBE O COMANDO --- // 
-        //buf vai guardar o comando recebido do teclado
         char *buf = malloc(BUFSZ);
         memset(buf, 0, BUFSZ-1);
         fgets(buf, BUFSZ-1, stdin);
         buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
 
-        // --- RECEBE E CONSTROI A MENSAGEM --- //
-        //process_command constroi a mensagem de requisicao em formato de string e a aloca dinamicamente. Retorna 0 se o comando tiver erro
+        // --- CONSTROI A MENSAGEM DE REQUISICAO --- //
         //msg_buf guarda a mensagem que vai ser enviada ao server
         char *msg_buf = malloc(MSGSZ);
-        if(!process_command(buf, msg_buf))
+        unsigned correto = process_command(buf, msg_buf);
+        if(!correto)
             break;  //se receber mensagem com algum erro, sai do loop
         if(!strcmp(buf, "kill"))
             break;  //se receber o comando kill, sai do loop
 
-        // --- ENVIA A MENSAGEM --- // 
+        // --- ENVIA A MENSAGEM DE REQUISICAO --- // 
         size_t count = send(s, msg_buf, strlen(msg_buf)+1, 0); //envia como string
         if (count != strlen(msg_buf)+1) {
             logexit("send");
         }
 
-        // --- RECEBE MENSAGEM DO SERVER (response) --- //
-        //Aguarda chegar mensagem do servidor no socket em formato de string e salva no buffer
+        // --- RECEBE MENSAGEM DE RESPOSTA  --- //
         //O recv salva o que é recebido byte a byte o e retorna o numero de bytes recebido
-        char *buf_res = malloc(BUFSZ);
+        char *buf_res = malloc(MSGSZ);
         count = recv(s, buf_res + total, BUFSZ - total, 0);
         if(count == 0){
             //Se nao receber nada, significa que a conexão foi fechada
             break;
         }
-        //Desloca o buffer pra receber o proximo byte
-        total += count;
+        total += count; //Desloca o buffer pra receber o proximo byte
+        //printf("%s", buf_res);
 
-        // Imprime a mensagem na tela
-        printf("%s", buf_res);
-
+        // --- TRATA MENSAGEM DE RESPOSTA E IMPRIME AVISO NA TELA --- //
         char *warn = malloc(BUFSZ);
-        process_resmsg(buf_res, warn);
+        process_control_msg(buf_res, warn);
         printf("%s", warn);
 
-        
         // --- LIBERA A MEMORIA ---//
         free(buf);
         buf = NULL;

@@ -45,7 +45,6 @@ unsigned parse_msg_type(const char *msg_type_in){
 
 //Funcao para passar os enderecos recebidos na chamada do programa
 //para a estrutura do POSIX que guarda os enderecos (sockaddr_storage)
-
 //se tiver erro retorna -1, se nao retorna 0
 int addrparse(const char *ip_recebido, const char *port_recebido, struct sockaddr_storage *storage){
     if(ip_recebido == NULL || port_recebido == NULL){
