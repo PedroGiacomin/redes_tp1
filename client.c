@@ -107,7 +107,7 @@ unsigned process_command(char *comando, char *msg_out){
     //caso REM_REQ
     else if(!strcmp(token, "remove")){
     
-        strcat(msg_out, "REM_REQ"); 
+        strcpy(msg_out, "REM_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
         if(strcmp(token, "0") && !atoi(token))
@@ -138,7 +138,7 @@ unsigned process_command(char *comando, char *msg_out){
     //caso CH_REQ
     else if(!strcmp(token, "change")){
 
-        strcat(msg_out, "CH_REQ"); 
+        strcpy(msg_out, "CH_REQ"); 
 
         token = strtok(NULL, " "); //token = devId
         if(strcmp(token, "0") && !atoi(token))
@@ -194,7 +194,7 @@ unsigned process_command(char *comando, char *msg_out){
         
         //caso LOC_REQ
         if(!strcmp(token, "in")){
-            strcat(msg_out, "LOC_REQ");
+            strcpy(msg_out, "LOC_REQ");
 
             token = strtok(NULL, " "); //token = locId
             if(strcmp(token, "0") && !atoi(token))
@@ -208,7 +208,7 @@ unsigned process_command(char *comando, char *msg_out){
         
         //caso DEV_REQ
         else if(!strcmp(token, "0") || atoi(token)){        
-            strcat(msg_out, "DEV_REQ");
+            strcpy(msg_out, "DEV_REQ");
 
             char *hold = malloc(strlen(token));
             strcpy(hold, token);   //guarda o token = devId
@@ -235,8 +235,6 @@ unsigned process_command(char *comando, char *msg_out){
         else{
             return 0;
         }
-
-        return 2;
     }
 
     //caso erro
@@ -248,10 +246,16 @@ unsigned process_command(char *comando, char *msg_out){
 }
 
 //Transforma uma mensagem OK, ERROR em um aviso no terminal do cliente
-void process_control_msg(char *msg_in, char *str_out){
+void process_res_msg(char *msg_in, char *str_out, char *req_msg){
     char *token = strtok(msg_in, " "); //token = type
     int type = parse_msg_type(token);
     unsigned code = 0;
+    char *ligado_aux = malloc(STR_MIN);
+    char *dado_aux = malloc(STR_MIN);
+    char *loc_aux = malloc(STR_MIN);
+    char *dev_aux = malloc(STR_MIN);
+    int i = 0;
+    int count = 0;
 
     switch (type){
 
@@ -306,10 +310,94 @@ void process_control_msg(char *msg_in, char *str_out){
             }
         break;
 
+        case DEV_RES:
+            // Desmonta o DEV_RES
+            token = strtok(NULL, " "); //token = ligado
+            strcpy(ligado_aux, token);
+            token = strtok(NULL, " "); //token = dado
+            strcpy(dado_aux, token);
+
+            // Desmonta o DEV_REQ
+            // req_msg = DEV_REQ <locId> <devId>
+            token = strtok(req_msg, " "); //token = DEV_REQ
+            token = strtok(NULL, " "); //token = loc_id
+            strcpy(loc_aux, token);
+
+            token = strtok(NULL, " "); //token = dev_id
+            strcpy(dev_aux, token);
+            dev_aux = strtok(dev_aux, "\n");
+            
+            strcpy(str_out, "device ");
+            strcat(str_out, dev_aux);
+            strcat(str_out, " in ");
+            strcat(str_out, loc_aux);
+            strcat(str_out, ": ");
+            strcat(str_out, ligado_aux);
+            strcat(str_out, " ");
+            dado_aux = strtok(dado_aux, "\n");
+            strcat(str_out, dado_aux);
+            strcat(str_out, "\n");
+
+        break;
+
+        case LOC_RES:
+            // Desmonta o LOC_RES
+            //LOC_RES <dev_1> <lig1> <dado1> <dev_2> <lig2> <dado2>\n
+
+            //percorre toda a mensagem e conta quanto espacos ela tem, todo dispositivo tem 3 espacos
+            while (msg_in[i] != '\n'){
+                //Por algum motivo tem 2 valores pro espaco no ascii
+                if(msg_in[i] ==  0 || msg_in[i] == 32){
+                    count++;
+                   
+                }
+                i++;
+            }
+
+            char aux[MSGSZ] = "";
+            for(int j = 0; j < count/3; j++){
+                token = strtok(NULL, " "); //token = dev[i]
+                strcat(aux, token);
+                strcat(aux, " (");
+
+                token = strtok(NULL, " "); //token = ligado[i]
+                strcat(aux, token);
+                strcat(aux, " ");
+                
+                token = strtok(NULL, " "); //token = dado[i] || dado[i]\n
+                if(j == (count/3) - 1){
+                    token = strtok(token, "\n"); //se for o ultimo item da LOC_RES, tira o \n
+                }
+                strcat(aux, token);
+                strcat(aux, ") ");
+            }
+            
+            token = strtok(req_msg, " "); //token = LOC_REQ
+            token = strtok(NULL, " "); //token = loc_id 
+            strcpy(loc_aux, token);
+            loc_aux = strtok(loc_aux, "\n");
+            
+            strcpy(str_out, "local ");
+            strcat(str_out, loc_aux);
+            strcat(str_out, ": ");
+
+            strcat(str_out, aux);
+            strcat(str_out, "\n");
+
+        break;
+
         default:
             break;
-        }
+    }
 
+    free(loc_aux);
+    loc_aux = NULL;
+    free(dev_aux);
+    dev_aux = NULL;
+    free(ligado_aux);
+    ligado_aux = NULL;
+    free(dado_aux);
+    dado_aux = NULL;
 }
 
 //argv[1] -> IP do servidor
@@ -389,10 +477,10 @@ int main(int argc, char **argv){
         }
         total += count; //Desloca o buffer pra receber o proximo byte
         //printf("%s", buf_res);
-
         // --- TRATA MENSAGEM DE RESPOSTA E IMPRIME AVISO NA TELA --- //
         char *warn = malloc(BUFSZ);
-        process_control_msg(buf_res, warn);
+        process_res_msg(buf_res, warn, msg_buf);
+        
         printf("%s", warn);
 
         // --- LIBERA A MEMORIA ---//

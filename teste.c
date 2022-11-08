@@ -388,50 +388,18 @@ unsigned process_command(char *comando, char *msg_out){
 
 int main(){
     // --- TESTES --- // 
-    printf("Teste do reqres_msg2string\n");
+    char *teste = malloc(1024);
+    teste = "aa bb cc dd\n";
 
-    // --- BUFFER --- // 
-    //Buffer que vai guardar o conteudo recebido do teclado
-    char *buf = malloc(BUFSZ);
+    int count = 0;
+    for(int i = 0; i < strlen(teste); i++){
+        if(teste[i] == ' ')
+            count++;
+        if(teste[i] == '\n')
+            break;
+    }
 
-    memset(buf, 0, BUFSZ);
-	fgets(buf, BUFSZ-1, stdin);
-    buf = strtok(buf, "\n"); //desconsidera o enter que se da ao acabar de digitar o comando
-
-    char *msg_buf = malloc(0);
-    printf("ACERTO = %d\n", process_command(buf, msg_buf));
-
-    puts(msg_buf);
-
-    free(msg_buf);
+    printf("count> %d\n", count);
 
     return 0;
 }
-
-       else{
-                //Constroi a DEV_RES
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen("device"));
-                strcat(msg_out, "device");
-
-                char *aux = malloc(STR_MIN);
-                sprintf(aux, " %d", msg->dev_id);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
-                
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(" in"));
-                strcat(msg_out, " in");
-
-                sprintf(aux, " %d", msg->local_id);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
-
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(":"));
-                strcat(msg_out, ":");
-
-                //Consulta o DB e insere as infos na string da msg de resposta 
-                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].ligado);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
-                
-                sprintf(aux, " %d", locais[msg->local_id].dispositivos[msg->dev_id].dado);
-                msg_out = realloc(msg_out, sizeof(msg_out) + strlen(aux));
-
-                free(aux);
-            }

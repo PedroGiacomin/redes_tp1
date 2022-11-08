@@ -34,14 +34,13 @@ struct local{
     struct dispositivo dispositivos[5];
 };
 
-//Funcoes pra construir mensagens de controle ERROR e OK jah em formato de string, fornecendo apenas o codigo
+//Funcoes pra construir mensagens de controle ERROR e OK ja em formato de string, fornecendo apenas o codigo
 void build_error_msg(char *msg_out, unsigned codigo){
     
     //parse int->str
     char *code_aux = malloc(sizeof(STR_MIN));
     sprintf(code_aux, "%02u", codigo);
-    
-    msg_out = realloc(msg_out, strlen("ERROR") + strlen(code_aux) + strlen("\n"));
+
     strcpy(msg_out, "ERROR ");
     strcat(msg_out, code_aux);
     strcat(msg_out, "\n");
@@ -53,8 +52,7 @@ void build_ok_msg(char *msg_out, unsigned codigo){
     //parse int->str
     char *code_aux = malloc(sizeof(STR_MIN));
     sprintf(code_aux, "%02u", codigo);
-    
-    msg_out = realloc(msg_out, strlen("ERROR") + strlen(code_aux) + strlen("\n"));
+
     strcpy(msg_out, "OK ");
     strcat(msg_out, code_aux);
     strcat(msg_out, "\n");
@@ -78,9 +76,6 @@ unsigned is_loc_id_valid(int loc_id){
     return 0;
 }
 
-// [OBS - ANTES] - Não usei um switch case pra nao ter que ficar transformando o tipo de msg de requisicao de enum pra string
-// [OBS - DEPOIS] - depois de fazer a funcao de parse deu pra usar switch case
-//Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle (OK ou ERROR) ou de RESPONSE para o cliente na variavel msg_out
 // [ERRO] - Tive problema ao passar o database por referencia para a funcao process_request, mas deu certo usando esses colchetes
 
 // --- LOGICA DO DB --- //
@@ -103,8 +98,8 @@ unsigned is_loc_id_valid(int loc_id){
 //      5      camera       4
 // - O valor default das posicoes do vetor de dispositivos eh 0, assim, se o dispositivo na posicao j do vetor eh 0, significa
 // que o dispositivo de ID j nao estah instalado naquele local
-// - As posicoes 0 nao sao utilizadas
 
+//Funcao que trata a mensagem que chega do cliente e retorna a mensagem de controle (OK ou ERROR) ou de RESPONSE para o cliente na variavel msg_out
 void process_request(char *request, struct local locais[], char *response){
 
     char *token = strtok(request, " "); //token = type
@@ -223,20 +218,16 @@ void process_request(char *request, struct local locais[], char *response){
 
             //Constroi a resposta com os dados como uma string dinamicamente
             //DEV_RES <ligado> <dado>  
-            //response = realloc(response, strlen("DEV_RES"));
             strcpy(response, "DEV_RES");
 
             char *aux = malloc(STR_MIN);
             //Consulta o DB e insere as infos na string da msg de resposta 
             sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].ligado);
-            //response = realloc(response, sizeof(response) + strlen(aux));
             strcat(response, aux);
             
             sprintf(aux, " %d", locais[loc_id - 1].dispositivos[dev_id - 1].dado);
-            //response = realloc(response, sizeof(response) + strlen(aux));
             strcat(response, aux);
 
-            //response = realloc(response, sizeof(response) + strlen("\n"));
             strcat(response, "\n");
             
             free(aux);
@@ -302,8 +293,8 @@ int main(int argc, char **argv){
     //cada local por padrao tem um vetor de 5 dispositivos
     struct local database[MAX_DEV_ID];
     //inicializa o banco de dados com os ids 0
-    for(int i = MIN_LOC_ID - 1 ; i <= MAX_LOC_ID - 1; i++){
-        database[i].id = i + 1;
+    for(int i = MIN_LOC_ID ; i <= MAX_LOC_ID; i++){
+        database[i - 1].id = i;
         for(int j = MIN_DEV_ID - 1; j <= MAX_DEV_ID - 1; j++){
             database[i].dispositivos[j].id = 0;
             database[i].dispositivos[j].dado = 0;
@@ -370,14 +361,11 @@ int main(int argc, char **argv){
 
     while (1) {
         // ------------- TROCA DE MENSAGENS ------------- //
-        // --- BUFFER --- //
-        char buf[BUFSZ];
-        memset(buf, 0, BUFSZ);
 
         // --- RECEBIMENTO DA MENSAGEM DO CLIENTE (request) --- //
         //Recebe msg em formato de [string] e salva no numa string
         char req_msg[MSGSZ];
-        memset(req_msg, 0, BUFSZ);
+        memset(req_msg, 0, MSGSZ);
         size_t count = recv(client_sock, req_msg, MSGSZ - 1, 0);
         if(count == 0){
             //Se nao receber nada, significa que a conexão foi fechada
@@ -386,6 +374,7 @@ int main(int argc, char **argv){
         }
         printf("%s", req_msg); //Imprime a msg na tela
         
+        // --- ACAO E CONSTRUCAO DA MENSAGEM DE RESPOSTA --- //
         //Processa a mensagem e guarda a mensagem de resposta ao cliente numa string
         char *res_msg = malloc(MSGSZ);
         process_request(req_msg, database, res_msg);
