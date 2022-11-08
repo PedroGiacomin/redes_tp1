@@ -343,7 +343,6 @@ void process_res_msg(char *msg_in, char *str_out, char *req_msg){
         case LOC_RES:
             // Desmonta o LOC_RES
             //LOC_RES <dev_1> <lig1> <dado1> <dev_2> <lig2> <dado2>\n
-
             //percorre toda a mensagem e conta quanto espacos ela tem, todo dispositivo tem 3 espacos
             while (msg_in[i] != '\n'){
                 //Por algum motivo tem 2 valores pro espaco no ascii
@@ -476,7 +475,7 @@ int main(int argc, char **argv){
             break;
         }
         total += count; //Desloca o buffer pra receber o proximo byte
-        //printf("%s", buf_res);
+
         // --- TRATA MENSAGEM DE RESPOSTA E IMPRIME AVISO NA TELA --- //
         char *warn = malloc(BUFSZ);
         process_res_msg(buf_res, warn, msg_buf);
